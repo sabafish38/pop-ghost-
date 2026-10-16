@@ -212,43 +212,44 @@
             </div>
 
             <!-- 育成強化パネル -->
-            <div id="panel-upgrade" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto no-scrollbar">
-                <button id="upg-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+            <div id="panel-upgrade" class="grid grid-cols-2 gap-1.5">
+                <button id="upg-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white min-h-[62px]">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-speed-name" class="text-[11px] font-extrabold text-stone-800">⚡ 出現スピード</span>
-                        <span id="lvl-speed" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                        <span id="txt-upg-speed-name" class="text-[10.5px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
+                        <span id="lvl-speed" class="text-[8.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div id="txt-upg-speed-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">湧く間隔が短縮＆<br>一度にドバッと出現！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-speed">15</span></div>
+                    <div id="txt-upg-speed-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight mt-0.5">湧く間隔短縮＆大量出現</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-0.5">👻 <span id="cost-speed">15</span></div>
                 </button>
 
-                <button id="upg-cap" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                <button id="upg-cap" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white min-h-[62px]">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-cap-name" class="text-[11px] font-extrabold text-stone-800">🏠 おへや拡張</span>
-                        <span id="lvl-cap" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                        <span id="txt-upg-cap-name" class="text-[10.5px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
+                        <span id="lvl-cap" class="text-[8.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div id="txt-upg-cap-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">おへやに溜められる<br>おばけの上限UP！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-cap">30</span></div>
+                    <div id="txt-upg-cap-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight mt-0.5">溜められる上限UP！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-0.5">👻 <span id="cost-cap">30</span></div>
                 </button>
 
-                <button id="upg-rare" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                <button id="upg-rare" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white min-h-[62px]">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-rare-name" class="text-[11px] font-extrabold text-stone-800">🌈 突然変異率</span>
-                        <span id="lvl-rare" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                        <span id="txt-upg-rare-name" class="text-[10.5px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
+                        <span id="lvl-rare" class="text-[8.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div id="txt-upg-rare-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">高額なレア＆珍種<br>おばけの出現率UP！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-rare">50</span></div>
+                    <div id="txt-upg-rare-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight mt-0.5">高額レアおばけ出現率UP</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-0.5">👻 <span id="cost-rare">50</span></div>
                 </button>
 
-                <button id="upg-magnet" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                <button id="upg-magnet" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white min-h-[62px]">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-magnet-name" class="text-[11px] font-extrabold text-stone-800">🧲 吸引パワー</span>
-                        <span id="lvl-magnet" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                        <span id="txt-upg-magnet-name" class="text-[10.5px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
+                        <span id="lvl-magnet" class="text-[8.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div id="txt-upg-magnet-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">指でなぞった時の<br>吸い込み範囲が拡大！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-magnet">40</span></div>
+                    <div id="txt-upg-magnet-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight mt-0.5">指の吸い込み範囲が拡大！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-0.5">👻 <span id="cost-magnet">40</span></div>
                 </button>
             </div>
+
 
             <!-- キャッチャー管理パネル -->
             <div id="panel-shop" class="hidden grid-cols-2 gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
