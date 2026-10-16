@@ -1,0 +1,2954 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ポップゴースト！ - ゆるかわ出現放置ゲーム (Web試験版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>時々
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            box-sizing: border-box;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1c1917;
+        }
+        .doodle-box {
+            background: #ffffff;
+            border: 2px solid #2d2d2d;
+            border-radius: 14px;
+            box-shadow: 2px 2px 0px #2d2d2d;
+            transition: all 0.1s ease;
+        }
+        .doodle-button {
+            background: #ffffff;
+            border: 2px solid #2d2d2d;
+            border-radius: 10px;
+            box-shadow: 0px 3px 0px #2d2d2d;
+            transition: transform 0.08s ease, box-shadow 0.08s ease;
+            touch-action: manipulation;
+        }
+        .doodle-button:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0px 1px 0px #2d2d2d;
+        }
+        .doodle-button:disabled {
+            opacity: 0.5;
+            background: #e5e5e5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        @keyframes rainbow-fever {
+            0% { background-color: #fff4e6; }
+            33% { background-color: #ffe6f0; }
+            66% { background-color: #e6f7ff; }
+            100% { background-color: #f3e8ff; }
+        }
+        .fever-mode {
+            animation: rainbow-fever 1.2s infinite alternate ease-in-out;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .pooled-ghost {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 56px;
+            height: 56px;
+            display: none;
+            pointer-events: none;
+            will-change: transform;
+            transform-origin: center center;
+        }
+        .ghost-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            transform-origin: center center;
+        }
+        .stack-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: #ff4757;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 9999px;
+            border: 1.5px solid #2d2d2d;
+            box-shadow: 1px 1px 0px #2d2d2d;
+            white-space: nowrap;
+            display: none;
+            transform: scale(0.9);
+        }
+        .baby-badge {
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f59e0b;
+            color: #ffffff;
+            font-size: 8px;
+            font-weight: 800;
+            padding: 0 4px;
+            border-radius: 6px;
+            border: 1px solid #2d2d2d;
+            white-space: nowrap;
+        }
+        .dev-input {
+            background: #292524;
+            border: 1px solid #57534e;
+            color: #f5f5f4;
+            font-size: 11px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            width: 100%;
+            outline: none;
+        }
+        .dev-btn {
+            background: #44403c;
+            color: #f5f5f4;
+            border: 1px solid #78716c;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 6px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .dev-btn:hover { background: #57534e; }
+        .dev-btn-primary { background: #0284c7; border-color: #38bdf8; color: white; }
+        .dev-btn-danger { background: #991b1b; border-color: #ef4444; color: white; }
+
+        input[type="number"].no-spinners::-webkit-outer-spin-button,
+        input[type="number"].no-spinners::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"].no-spinners {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="flex flex-row h-screen w-screen overflow-hidden bg-stone-900 justify-center items-center relative">
+
+    <div id="game-app" class="flex flex-col h-full w-full max-w-md bg-[#fdfbf7] relative shadow-2xl border-x-2 border-stone-800 shrink-0 z-10">
+        <!-- ヘッダー -->
+        <header class="z-20 px-3 py-2 bg-[#fdfbf7]/95 backdrop-blur-sm border-b-2 border-dashed border-stone-300 flex flex-col gap-1.5">
+            <div class="doodle-box px-3 py-1.5 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl animate-pulse">👻</span>
+                    <div>
+                        <div id="txt-score-title" class="text-[9px] font-bold text-stone-500 tracking-wider">総獲得おばけ玉</div>
+                        <div id="score-display" class="text-xl font-extrabold text-stone-900 tracking-tight leading-none overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-[240px]">0</div>
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    <div id="txt-density-title" class="text-[8px] font-bold text-stone-500">おへや密度</div>
+                    <div id="count-display" class="text-[11px] font-extrabold text-stone-800">0 / 100</div>
+                </div>
+            </div>
+
+            <!-- コントロールバー -->
+            <div class="flex justify-between items-center gap-1.5">
+                <div class="w-full h-2.5 bg-stone-200 rounded-full overflow-hidden border border-stone-800 flex-1 relative">
+                    <div id="capacity-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-200" style="width: 0%;"></div>
+                </div>
+
+                <button id="btn-login-info" class="doodle-button px-2 py-0.5 bg-rose-100 text-stone-800 font-extrabold text-[9px] flex items-center gap-1 shrink-0">
+                    <span>🏆</span><span id="header-login-days-txt">通算 1日目</span>
+                </button>
+
+                <button id="btn-settings" class="doodle-button px-2 py-0.5 bg-lime-100 text-stone-800 font-bold text-[9px] flex items-center gap-1 shrink-0">
+                    <span>⚙️</span><span id="txt-settings-btn">設定</span>
+                </button>
+
+                <button id="btn-dex" class="doodle-button px-2.5 py-0.5 bg-amber-100 text-stone-800 font-bold text-[9px] flex items-center gap-1 relative shrink-0">
+                    <span>📖</span><span id="txt-dex-btn">図鑑</span>
+                    <span id="dex-notify-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-white shadow hidden animate-bounce">!</span>
+                    <span id="save-indicator" class="absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[6px] px-1 rounded-full opacity-0 transition-opacity duration-300">保存</span>
+                </button>
+            </div>
+        </header>
+        <main id="canvas-container" class="flex-1 relative overflow-hidden cursor-pointer bg-[#fdfbf7] touch-none">
+            <div id="fast-battery-banner" class="absolute top-2 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center animate-pulse">
+                <span>⚡ <b id="txt-banner-fast-title">強力バッテリー稼働中！</b></span>
+                <span class="bg-white/20 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold">🔋<span id="txt-banner-fast-label">放置枠</span> <span id="fast-battery-timer-txt">2h</span></span>
+            </div>
+
+            <div id="eco-battery-banner" class="absolute top-2 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] bg-stone-700 text-amber-200 text-[9.5px] font-extrabold px-3 py-1 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center">
+                <span>🍃 <b id="txt-banner-eco-title">キャッチャー一時停止中</b></span>
+                <span id="txt-banner-eco-sub" class="text-stone-300 text-[8px]">タップで再開</span>
+            </div>
+
+            <canvas id="gameCanvas" class="absolute inset-0 block w-full h-full pointer-events-none z-0"></canvas>
+            <div id="ghost-playground" class="absolute inset-0 z-10 pointer-events-none overflow-hidden"></div>
+
+            <div id="tutorial-toast" class="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 bg-stone-800/85 text-white text-[10px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap transition-opacity duration-500 z-30 shadow-md">
+                👆 指でなぞっておばけを吸い込もう！
+            </div>
+        </main>
+        <footer class="z-20 bg-[#f5f0e6] border-t-2 border-stone-800 px-2 py-2">
+            <div class="flex gap-1.5 mb-1.5">
+                <button id="tab-upgrade" class="flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
+                    🛠️ 育成・強化
+                </button>
+                <button id="tab-shop" class="flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative">
+                    💎 キャッチャー
+                </button>
+            </div>
+
+            <!-- 育成強化パネル -->
+            <div id="panel-upgrade" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto no-scrollbar">
+                <button id="upg-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-speed-name" class="text-[11px] font-extrabold text-stone-800">⚡ 出現スピード</span>
+                        <span id="lvl-speed" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                    </div>
+                    <div id="txt-upg-speed-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">湧く間隔が短縮＆<br>一度にドバッと出現！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-speed">15</span></div>
+                </button>
+
+                <button id="upg-cap" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-cap-name" class="text-[11px] font-extrabold text-stone-800">🏠 おへや拡張</span>
+                        <span id="lvl-cap" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                    </div>
+                    <div id="txt-upg-cap-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">おへやに溜められる<br>おばけの上限UP！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-cap">30</span></div>
+                </button>
+
+                <button id="upg-rare" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-rare-name" class="text-[11px] font-extrabold text-stone-800">🌈 突然変異率</span>
+                        <span id="lvl-rare" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                    </div>
+                    <div id="txt-upg-rare-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">高額なレア＆珍種<br>おばけの出現率UP！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-rare">50</span></div>
+                </button>
+
+                <button id="upg-magnet" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-magnet-name" class="text-[11px] font-extrabold text-stone-800">🧲 吸引パワー</span>
+                        <span id="lvl-magnet" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                    </div>
+                    <div id="txt-upg-magnet-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">指でなぞった時の<br>吸い込み範囲が拡大！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-magnet">40</span></div>
+                </button>
+            </div>
+
+            <!-- キャッチャー管理パネル -->
+            <div id="panel-shop" class="hidden grid-cols-2 gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
+                <div class="doodle-button p-1.5 text-left flex flex-col justify-between bg-gradient-to-br from-cyan-50 to-blue-50 border-sky-600 col-span-2 sm:col-span-1">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-catcher-card-title" class="text-[11px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
+                        <span id="roomba-badge" class="text-[8px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
+                    </div>
+                    <div class="flex gap-1 mt-1">
+                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9.5px] rounded py-1 shadow-sm transition">
+                            【試験版】無料でアンロック
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="card-fever" class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-pink-50 to-red-50 border-pink-500 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full mb-1 pointer-events-none">
+                        <span id="txt-fever-card-title" class="text-[10px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
+                        <span id="txt-fever-card-time" class="text-[7px] font-bold bg-pink-500 text-white px-1 rounded">20秒</span>
+                    </div>
+                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[8px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
+                </div>
+
+                <div id="card-golden" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full mb-1 pointer-events-none">
+                        <span id="txt-golden-card-title" class="text-[9px] font-extrabold text-stone-700 tracking-tighter">👑 黄金キャッチャー</span>
+                        <span class="text-[7px] font-bold bg-amber-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
+                </div>
+
+                <div id="box-roomba-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full pointer-events-none">
+                        <span id="txt-speed-card-title" class="text-[11px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
+                        <span class="text-[8px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full mt-1 bg-stone-400 text-white font-extrabold text-[9px] rounded py-1 flex items-center justify-center px-2 pointer-events-none">
+                        <span>🔒 正式版で強化可能</span>
+                    </div>
+                </div>
+
+                <div id="box-roomba-battery" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full pointer-events-none">
+                        <span id="txt-battery-card-title" class="text-[11px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
+                        <span class="text-[8px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full mt-1 bg-stone-400 text-white font-extrabold text-[9px] rounded py-1 flex items-center justify-center px-2 pointer-events-none">
+                        <span>🔒 正式版で拡張可能</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- 設定モーダル -->
+        <div id="modal-settings" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+            <div class="doodle-box w-full max-w-xs p-4 bg-[#fdfbf7] flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
+                <div class="flex justify-between items-center border-b-2 border-stone-800 pb-2 mb-3">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-lg">⚙️</span>
+                        <h2 class="text-sm font-extrabold text-stone-900" id="txt-settings-title">設定</h2>
+                    </div>
+                    <button id="btn-settings-close" class="text-stone-500 hover:text-stone-900 font-extrabold text-base px-2">✕</button>
+                </div>
+
+                <div class="mb-3 bg-stone-100 p-2.5 rounded-lg border border-stone-300">
+                    <div class="text-xs font-bold text-stone-800 mb-1.5 flex items-center gap-1">
+                        <span>🌐</span><span id="txt-lang-heading">言語 (Language)</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button class="settings-lang-btn doodle-button py-1 text-[10px] font-extrabold text-stone-800" data-lang="ja">🇯🇵 日本語</button>
+                        <button class="settings-lang-btn doodle-button py-1 text-[10px] font-extrabold text-stone-800" data-lang="en">🇺🇸 English</button>
+                        <button class="settings-lang-btn doodle-button py-1 text-[10px] font-extrabold text-stone-800" data-lang="zh">🇨🇳 简体中文</button>
+                        <button class="settings-lang-btn doodle-button py-1 text-[10px] font-extrabold text-stone-800" data-lang="ko">🇰🇷 한국어</button>
+                    </div>
+                </div>
+                
+                <div class="mb-3 bg-stone-100 p-2.5 rounded-lg border border-stone-300">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs">🪈</span>
+                            <span class="text-xs font-bold text-stone-800">BGM</span>
+                        </div>
+                        <button id="toggle-bgm" class="doodle-button px-2.5 py-0.5 text-[9px] font-extrabold bg-lime-200 text-stone-800">ON</button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input id="slider-bgm" type="range" min="0" max="100" value="70" class="w-full accent-emerald-600 cursor-pointer">
+                        <span id="txt-bgm-vol" class="text-[10px] font-extrabold text-stone-700 w-8 text-right">70%</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 bg-stone-100 p-2.5 rounded-lg border border-stone-300">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs">🔔</span>
+                            <span class="text-xs font-bold text-stone-800" id="txt-se-title">効果音 (SE)</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button id="btn-test-se" class="doodle-button px-2 py-0.5 text-[8.5px] font-bold bg-stone-200 text-stone-700">試聴 🔊</button>
+                            <button id="toggle-se" class="doodle-button px-2.5 py-0.5 text-[9px] font-extrabold bg-sky-200 text-stone-800">ON</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input id="slider-se" type="range" min="0" max="100" value="80" class="w-full accent-sky-600 cursor-pointer">
+                        <span id="txt-se-vol" class="text-[10px] font-extrabold text-stone-700 w-8 text-right">80%</span>
+                    </div>
+                </div>
+
+                <button id="btn-settings-ok" class="doodle-button w-full py-2 bg-amber-300 hover:bg-amber-400 text-stone-900 font-extrabold text-xs">
+                    完了
+                </button>
+            </div>
+        </div>
+
+        <!-- ログイン達成ボーナスモーダル -->
+        <div id="modal-login-reward" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4">
+            <div class="doodle-box w-full max-w-sm p-4 bg-[#fdfbf7] flex flex-col items-center text-center">
+                <div class="text-4xl mb-1 animate-bounce" id="login-reward-icon">💮</div>
+                <div class="text-[11px] font-bold text-amber-600 mb-0.5" id="login-days-counter-txt">通算 7日目 達成！</div>
+                <h2 class="text-base font-extrabold text-stone-900 mb-2" id="login-reward-title">記念おばけがやってきました！</h2>
+                <div id="login-reward-desc" class="text-[11px] text-stone-700 leading-relaxed mb-4 w-full bg-stone-100 border border-stone-300 rounded p-2.5 text-left"></div>
+                <button id="btn-login-reward-claim" class="doodle-button w-full py-2 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-stone-900 font-extrabold text-xs shadow-md">
+                    おへやで迎える！ ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- 通算ログイン状況確認モーダル -->
+        <div id="modal-login-info" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+            <div class="doodle-box w-full max-w-xs p-4 bg-[#fdfbf7] flex flex-col text-center">
+                <div class="flex justify-between items-center border-b-2 border-stone-800 pb-2 mb-2">
+                    <h2 class="text-sm font-extrabold text-stone-900" id="txt-login-info-title">🏆 通算ログイン状況</h2>
+                    <button id="btn-login-info-close" class="text-stone-500 hover:text-stone-900 font-extrabold text-base px-2">✕</button>
+                </div>
+                <div class="text-2xl mb-1">📅</div>
+                <div class="text-lg font-black text-rose-600" id="info-current-days-txt">通算 1日目</div>
+                <p class="text-[10px] text-stone-500 mb-3" id="txt-login-info-msg">マイペースに遊んでくれてありがとう！</p>
+                <div id="info-next-milestone-box" class="w-full bg-amber-50 border border-amber-300 rounded p-2 text-left mb-3"></div>
+                <button id="btn-login-info-ok" class="doodle-button w-full py-1.5 bg-amber-300 text-stone-900 font-extrabold text-xs">OK</button>
+            </div>
+        </div>
+
+        <!-- キャッチャー無料アンロックモーダル -->
+        <div id="modal-purchase-confirm" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4">
+            <div class="doodle-box w-full max-w-sm p-4 bg-[#fdfbf7] flex flex-col items-center text-center">
+                <div class="text-4xl mb-1">🤖</div>
+                <h2 class="text-base font-extrabold text-stone-900 mb-1">おばけキャッチャー</h2>
+                <div class="text-sm font-black text-emerald-600 mb-2">【試験プレイ版：無料】</div>
+                <div class="text-[11px] text-stone-700 leading-relaxed mb-4 w-full bg-stone-100 border border-stone-300 rounded p-2.5 text-left">
+                    <p class="font-bold text-sky-900 mb-1">【試験版限定：無料お試し体験】</p>
+                    ・お部屋を自律走行して自動でおばけを吸い込みます！<br>
+                    ・アプリを閉じている間もオフライン自動回収！<br>
+                    <span class="text-[10px] text-stone-500">※正式アプリ版では買い切り課金アイテムとして販売予定の機能です。</span>
+                </div>
+                <div class="flex w-full gap-2">
+                    <button id="btn-purchase-cancel" class="doodle-button flex-1 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 font-extrabold text-xs">
+                        閉じる
+                    </button>
+                    <button id="btn-purchase-execute" class="doodle-button flex-1 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-xs shadow-md">
+                        無料でアンロック
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- フィーバー確認モーダル (20秒) -->
+        <div id="modal-fever-confirm" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4">
+            <div class="doodle-box w-full max-w-sm p-4 bg-[#fdfbf7] flex flex-col items-center text-center">
+                <div class="text-4xl mb-1">🔥✨</div>
+                <h2 class="text-base font-extrabold text-stone-900 mb-1">フィーバータイム発動</h2>
+                <div class="text-xs font-bold text-rose-500 mb-2">20秒間 お祭り無双タイム！</div>
+                <div class="text-[11px] text-stone-700 leading-relaxed mb-4 w-full bg-stone-100 border border-stone-300 rounded p-2.5 text-left">
+                    <p class="font-bold text-rose-900 mb-1">【フィーバー効果】</p>
+                    ・吸い込んだおばけが<b>2匹のこおばけに分裂！</b><br>
+                    ・出現スピードが<b>超絶UP！</b><br>
+                    ・時間の限り捕まえまくれ！<br>
+                    <span class="text-[9.5px] text-stone-500">※試験版のため広告再生なしで発動します（3分に1回使用可能）。</span>
+                </div>
+                <div class="flex w-full gap-2">
+                    <button id="btn-fever-cancel" class="doodle-button flex-1 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 font-extrabold text-xs">
+                        やめる
+                    </button>
+                    <button id="btn-fever-execute" class="doodle-button flex-1 py-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-extrabold text-xs shadow-md">
+                        今すぐ発動！
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 言語選択モーダル -->
+        <div id="modal-language" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+            <div class="doodle-box w-full max-w-xs p-5 bg-[#fdfbf7] flex flex-col items-center text-center shadow-2xl">
+                <div class="text-4xl mb-2 animate-bounce">🌐✨</div>
+                <h2 class="text-base font-black text-stone-900 mb-1">Select Language</h2>
+                <p class="text-[10px] text-stone-500 mb-4">使用する言語を選択してください</p>
+                
+                <div class="grid grid-cols-1 gap-2 w-full mb-2">
+                    <button class="lang-btn doodle-button py-2 px-3 text-xs font-extrabold bg-amber-50 hover:bg-amber-100 text-stone-800 flex items-center justify-between" data-lang="ja">
+                        <span>🇯🇵 日本語</span><span class="text-[9px] text-stone-400 font-bold">Japanese</span>
+                    </button>
+                    <button class="lang-btn doodle-button py-2 px-3 text-xs font-extrabold bg-sky-50 hover:bg-sky-100 text-stone-800 flex items-center justify-between" data-lang="en">
+                        <span>🇺🇸 English</span><span class="text-[9px] text-stone-400 font-bold">英語</span>
+                    </button>
+                    <button class="lang-btn doodle-button py-2 px-3 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 text-stone-800 flex items-center justify-between" data-lang="zh">
+                        <span>🇨🇳 简体中文</span><span class="text-[9px] text-stone-400 font-bold">Chinese</span>
+                    </button>
+                    <button class="lang-btn doodle-button py-2 px-3 text-xs font-extrabold bg-emerald-50 hover:bg-emerald-100 text-stone-800 flex items-center justify-between" data-lang="ko">
+                        <span>🇰🇷 한국어</span><span class="text-[9px] text-stone-400 font-bold">Korean</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- チュートリアルモーダル -->
+        <div id="modal-tutorial" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 hidden">
+            <div class="doodle-box w-full max-w-sm p-4 bg-[#fdfbf7] flex flex-col items-center text-center">
+                <div class="text-3xl mb-1">👻✨</div>
+                <h2 id="txt-tut-title" class="text-base font-extrabold text-stone-900 mb-2">ポップゴーストへようこそ！</h2>
+                <div id="txt-tut-body" class="text-xs text-stone-700 leading-relaxed mb-4 text-left">
+                    おへやの中にゆるかわなおばけが次々と現れます<br>
+                    指でなぞって吸い込みおばけ玉を集めよう！<br><br>
+                    👻 <b>お化けを捕まえて図鑑完成を目指そう！</b><br>
+                    📅 <b>曜日・季節限定のレアおばけも登場！</b><br>
+                    🏆 <b>毎日遊んで通算ログイン記念おばけをゲット！</b>
+                </div>
+                <button id="btn-tutorial-next" class="doodle-button w-full py-2 bg-amber-300 hover:bg-amber-400 text-stone-900 font-extrabold text-xs">
+                    おへやへ行く！ ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- 図鑑モーダル -->
+        <div id="modal-dex" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
+            <div class="doodle-box w-full max-w-sm p-3 bg-[#fdfbf7] max-h-[88vh] flex flex-col">
+                <div class="flex justify-between items-center border-b-2 border-stone-800 pb-2 mb-2">
+                    <h2 class="text-base font-extrabold text-stone-800" id="dex-title-txt">📖 ゆるかわ図鑑</h2>
+                    <button id="close-dex" class="text-stone-500 hover:text-stone-800 font-extrabold text-lg px-2">×</button>
+                </div>
+                <div class="flex gap-1 mb-2">
+                    <button id="dex-tab-regular" class="flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-stone-800 text-white">
+                        通常 (30種)
+                    </button>
+                    <button id="dex-tab-special" class="flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-white text-stone-800">
+                        📅 曜日・季節 (19種)
+                    </button>
+                    <button id="dex-tab-login" class="flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-white text-stone-800">
+                        🏆 通算記念 (7種)
+                    </button>
+                </div>
+                <div id="dex-list" class="grid grid-cols-2 gap-2 overflow-y-auto pr-1 flex-1"></div>
+            </div>
+        </div>
+
+        <!-- オフライン放置報酬モーダル -->
+        <div id="modal-offline" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4">
+            <div class="doodle-box w-full max-w-sm p-4 bg-[#fdfbf7] flex flex-col items-center text-center">
+                <div class="text-4xl mb-2" id="offline-icon">🧹✨</div>
+                <h2 class="text-base font-extrabold text-stone-900 mb-2" id="offline-title">おかえりなさい！</h2>
+                <div id="offline-desc" class="text-xs text-stone-700 leading-relaxed mb-4 w-full bg-stone-100 border border-stone-300 rounded p-2 text-left"></div>
+                <button id="btn-offline-close" class="doodle-button w-full py-2 bg-sky-300 hover:bg-sky-400 text-stone-900 font-extrabold text-xs">
+                    受け取る ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="game-toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-[11px] font-bold px-4 py-2 rounded-full border border-stone-600 shadow-xl pointer-events-none opacity-0 transition-opacity duration-300 z-50"></div>
+    </div>
+
+    <script>
+        const LOCAL_STORAGE_KEY = 'obakedaku_save_data_web_test_v1';
+        const MAX_POOL_SIZE = 100;
+        const MAX_UPGRADE_LEVEL = 99;
+
+        // UIバッチ更新＆過負荷防止フラグ
+        let isUiDirty = false;
+        let lastPopSoundTime = 0;
+        let lastAppliedBpm = 104;
+        let lastAutoSaveTime = Date.now();
+
+        function safeAddListener(id, event, handler) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(event, handler);
+        }
+
+        function formatAstronomicalNumber(num) {
+            if (num === null || num === undefined || isNaN(num)) return "0";
+            if (num === Infinity) return "MAX";
+            if (num < 10000) return Math.floor(num).toLocaleString();
+            const units = ['', '万', '億', '兆', '京', '垓', '秭', '穣', '溝', '澗', '正', '載', '極', '恒河沙', '阿僧祇', '那由他', '不可思議', '無量大数'];
+            let i = 0; let n = num;
+            while (n >= 10000 && i < units.length - 1) { n /= 10000; i++; }
+            return (n >= 100 ? n.toFixed(1) : n.toFixed(2)) + units[i];
+        }
+
+        function formatDexValue(num) {
+            return num >= 100000 ? formatAstronomicalNumber(num) : num.toLocaleString();
+        }
+
+        function formatHoursMinutesSeconds(totalSec) {
+            const sec = Math.max(0, Math.floor(totalSec));
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            if (h > 0) return `${h}時間${m}分${s}秒`;
+            if (m > 0) return `${m}分${s}秒`;
+            return `${s}秒`;
+        }
+
+        function showGameToast(msg) {
+            const toast = document.getElementById('game-toast');
+            if (!toast) return;
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2400);
+        }
+
+        function getDailyCycleDate(date = new Date()) {
+            const d = new Date(date);
+            d.setHours(d.getHours() - 4);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        let simulatedDay = -1;
+        let simulatedMonth = -1;
+
+        function getCurrentDay() {
+            return simulatedDay >= 0 ? simulatedDay : new Date().getDay();
+        }
+        function getCurrentMonth() {
+            return simulatedMonth >= 1 ? simulatedMonth : (new Date().getMonth() + 1);
+        }
+        // 通常おばけ 30種
+        const REGULAR_GHOST_TYPES = [
+            { id: 'normal', name: 'すっぴんおばけ', desc: 'どこにでもいる素朴なおばけ ほっぺがほんのりピンク', value: 1, weight: 100, color: '#ffffff', cheek: '#ffb3ba', accessory: null, pitch: 'C5', unlockCost: 0, requireType: null },
+            { id: 'beret', name: 'ベレー帽おばけ', desc: 'クリエイティブな何かをひらめいた芸術家肌のおばけ', value: 3, weight: 25, color: '#ffffff', cheek: '#ffdfba', accessory: 'beret', pitch: 'E5', unlockCost: 0, requireType: null },
+            { id: 'sleepy', name: 'ねぼすけおばけ', desc: 'つねに眠そうでほぼ液体化している怠け者', value: 8, weight: 12, color: '#f0f8ff', cheek: '#bae1ff', accessory: 'zzz', pitch: 'G5', unlockCost: 0, requireType: null },
+            { id: 'devil', name: 'イタズラおばけ', desc: 'ちいさなツノが生えたちょっぴりワルな突然変異種', value: 20, weight: 6, color: '#f3e8ff', cheek: '#e8baff', accessory: 'horns', pitch: 'A5', unlockCost: 0, requireType: null },
+            { id: 'king', name: 'おうさまおばけ', desc: '黄金に輝く伝説の個体 発見すると超おトク！', value: 50, weight: 2.5, color: '#fff9db', cheek: '#ffd43b', accessory: 'crown', pitch: 'C6', unlockCost: 0, requireType: null },
+            { id: 'cat', name: 'ネコみみおばけ', desc: 'ネコの耳をつけて気まぐれにフワフワ歩くおばけ', value: 120, weight: 1.8, color: '#fff0f3', cheek: '#ffb3c6', accessory: 'cat', pitch: 'D6', unlockCost: 15, requireType: 'normal' },
+            { id: 'angel', name: 'てんしおばけ', desc: '小さな羽と輪っかがついた癒やし度満点のおばけ', value: 300, weight: 1.4, color: '#e0f2fe', cheek: '#7dd3fc', accessory: 'angel', pitch: 'E6', unlockCost: 25, requireType: 'beret' },
+            { id: 'punk', name: 'パンクおばけ', desc: 'モヒカンヘアでトゲトゲアクセをつけたロックなおばけ', value: 750, weight: 1.1, color: '#e2e8f0', cheek: '#cbd5e1', accessory: 'punk', pitch: 'F#6', unlockCost: 40, requireType: 'devil' },
+            { id: 'wizard', name: 'まほうつかいおばけ', desc: '大きな三角帽子をかぶり不思議な魔法を操る', value: 1800, weight: 0.9, color: '#ede9fe', cheek: '#c4b5fd', accessory: 'wizard', pitch: 'G6', unlockCost: 65, requireType: 'king' },
+            { id: 'galaxy', name: 'ギャラクシーおばけ', desc: '宇宙の星々をまとう究極の神出鬼没おばけ', value: 4500, weight: 0.75, color: '#1e1b4b', cheek: '#818cf8', accessory: 'galaxy', pitch: 'C7', unlockCost: 100, requireType: 'wizard' },
+            { id: 'ninja', name: 'ニンジャおばけ', desc: '闇夜に紛れて音もなく素早く移動する隠密おばけ', value: 12000, weight: 0.6, color: '#18181b', cheek: '#71717a', accessory: 'ninja', pitch: 'D7', unlockCost: 150, requireType: 'cat' },
+            { id: 'pirate', name: 'かいぞくおばけ', desc: '眼帯をつけてお宝を探し求める海の男', value: 30000, weight: 0.5, color: '#fffbeb', cheek: '#fde68a', accessory: 'pirate', pitch: 'E7', unlockCost: 220, requireType: 'angel' },
+            { id: 'doctor', name: 'はいしゃさんおばけ', desc: '虫歯を退治するための巨大な歯ブラシを持っている', value: 80000, weight: 0.45, color: '#f0fdf4', cheek: '#86efac', accessory: 'doctor', pitch: 'F7', unlockCost: 320, requireType: 'punk' },
+            { id: 'chef', name: 'コックおばけ', desc: '特製のオムライスを頭に乗せたグルメなおばけ', value: 200000, weight: 0.4, color: '#fff7ed', cheek: '#fdba74', accessory: 'chef', pitch: 'G7', unlockCost: 450, requireType: 'galaxy' },
+            { id: 'detective', name: 'めいたんていおばけ', desc: '虫眼鏡で小さな証拠を見逃さないキレ者', value: 500000, weight: 0.35, color: '#fefce8', cheek: '#fef08a', accessory: 'detective', pitch: 'A7', unlockCost: 600, requireType: 'ninja' },
+            { id: 'bunny', name: 'ウサ耳おばけ', desc: 'ピョンピョン跳ね回るキュートなロップイヤー風', value: 1200000, weight: 0.3, color: '#fdf2f8', cheek: '#f472b6', accessory: 'bunny', pitch: 'B7', unlockCost: 800, requireType: 'pirate' },
+            { id: 'alien', name: '宇宙人おばけ', desc: 'UFOに乗ってやってきた未知との遭遇系', value: 3000000, weight: 0.26, color: '#ecfdf5', cheek: '#34d399', accessory: 'alien', pitch: 'C8', unlockCost: 1100, requireType: 'doctor' },
+            { id: 'dracula', name: 'ドラキュラおばけ', desc: 'マントを翻して夜の街を闊歩するダンディ', value: 8000000, weight: 0.23, color: '#fafaf9', cheek: '#a855f7', accessory: 'dracula', pitch: 'D8', unlockCost: 1500, requireType: 'chef' },
+            { id: 'ghost_cat', name: 'ネコまどうおばけ', desc: 'ネコの魔法使い 怪しく光る目で全てを魅了する', value: 20000000, weight: 0.2, color: '#fdf4ff', cheek: '#e879f9', accessory: 'ghost_cat', pitch: 'E8', unlockCost: 2000, requireType: 'detective' },
+            { id: 'flower', name: 'お花見おばけ', desc: '頭の上に満開の桜を咲かせた春の使者', value: 50000000, weight: 0.18, color: '#fff1f2', cheek: '#fb7185', accessory: 'flower', pitch: 'F8', unlockCost: 2600, requireType: 'bunny' },
+            { id: 'snowman', name: 'ゆきだるまおばけ', desc: '寒さでカチコチに凍りついた冬限定モデル', value: 120000000, weight: 0.15, color: '#f0f9ff', cheek: '#38bdf8', accessory: 'snowman', pitch: 'G8', unlockCost: 3400, requireType: 'alien' },
+            { id: 'robot', name: 'サイボーグおばけ', desc: '機械のパーツを全身に組み込んだ近未来型', value: 300000000, weight: 0.13, color: '#f1f5f9', cheek: '#64748b', accessory: 'robot', pitch: 'A8', unlockCost: 4400, requireType: 'dracula' },
+            { id: 'samurai', name: 'サムライおばけ', desc: '武士道を重んじ背中に誇り高き刀を背負う', value: 800000000, weight: 0.1, color: '#fafaf9', cheek: '#78716c', accessory: 'samurai', pitch: 'B8', unlockCost: 5600, requireType: 'ghost_cat' },
+            { id: 'dragon', name: 'りゅうきしおばけ', desc: 'ドラゴンを従えて空を駆ける気高き戦士', value: 2000000000, weight: 0.08, color: '#fef2f2', cheek: '#ef4444', accessory: 'dragon', pitch: 'C9', unlockCost: 7000, requireType: 'flower' },
+            { id: 'unicorn', name: 'ユニコーンおばけ', desc: '虹色のたてがみを持つ神秘の幻獣おばけ', value: 5000000000, weight: 0.06, color: '#faf5ff', cheek: '#c084fc', accessory: 'unicorn', pitch: 'D9', unlockCost: 8800, requireType: 'snowman' },
+            { id: 'phoenix', name: 'フェニックスおばけ', desc: '炎の翼を纏い何度でも蘇る不死鳥の魂', value: 15000000000, weight: 0.05, color: '#fff7ed', cheek: '#f97316', accessory: 'phoenix', pitch: 'E9', unlockCost: 11000, requireType: 'robot' },
+            { id: 'pharaoh', name: 'ファラオおばけ', desc: '古代エジプトの黄金仮面をかぶった王様', value: 40000000000, weight: 0.04, color: '#fefce8', cheek: '#eab308', accessory: 'pharaoh', pitch: 'F9', unlockCost: 14000, requireType: 'samurai' },
+            { id: 'emperor', name: 'しんわおばけ', desc: '神話の時代から存在するすべての祖先', value: 100000000000, weight: 0.03, color: '#f8fafc', cheek: '#475569', accessory: 'emperor', pitch: 'G9', unlockCost: 18000, requireType: 'dragon' },
+            { id: 'cosmos', name: 'コスモおばけ', desc: '大宇宙の摂理そのものを内包した神聖個体', value: 300000000000, weight: 0.02, color: '#09090b', cheek: '#a855f7', accessory: 'cosmos', pitch: 'A9', unlockCost: 23000, requireType: 'unicorn' },
+            { id: 'god', name: 'ゴッドおばけ', desc: 'すべてを極めしこの世界の創造主たる究極のおばけ', value: 1000000000000, weight: 0.01, color: '#ffffff', cheek: '#eab308', accessory: 'god', pitch: 'C10', unlockCost: 30000, requireType: 'cosmos' }
+        ];
+
+        // 曜日限定 7種
+        const WEEKDAY_GHOST_TYPES = [
+            { id: 'day_sun', name: 'ほりでおばけ', desc: '【日曜日限定】お気に入りのナイトキャップで一日中ゴロゴロ', value: 777, weight: 1.1, color: '#fff5f5', cheek: '#fecdd3', accessory: 'day_sun', targetDay: 0, dayName: '日曜日', pitch: 'D6' },
+            { id: 'day_mon', name: 'カフェラテおばけ', desc: '【月曜日限定】温かいマグカップで気だるい月曜日を応援', value: 888, weight: 1.1, color: '#f5ebe0', cheek: '#e6ccb2', accessory: 'day_mon', targetDay: 1, dayName: '月曜日', pitch: 'E6' },
+            { id: 'day_tue', name: 'メラメラおばけ', desc: '【火曜日限定】頭に炎を灯して今週を乗り切るやる気満点種', value: 999, weight: 1.1, color: '#fff1f2', cheek: '#fca5a5', accessory: 'day_tue', targetDay: 2, dayName: '火曜日', pitch: 'F#6' },
+            { id: 'day_wed', name: 'スイーツおばけ', desc: '【水曜日限定】週の折り返しにご褒美プリンを乗せた癒やし系', value: 1200, weight: 1.1, color: '#fffbeb', cheek: '#fde047', accessory: 'day_wed', targetDay: 3, dayName: '水曜日', pitch: 'G6' },
+            { id: 'day_thu', name: 'どくしょおばけ', desc: '【木曜日限定】まんまるメガネで静かにページをめくる読書家', value: 1500, weight: 1.1, color: '#f0fdf4', cheek: '#bbf7d0', accessory: 'day_thu', targetDay: 4, dayName: '木曜日', pitch: 'A6' },
+            { id: 'day_fri', name: 'はなきんおばけ', desc: '【金曜日限定】週末の開放感に満ちたパーティーハット個体', value: 2500, weight: 1.1, color: '#fdf4ff', cheek: '#f0abfc', accessory: 'day_fri', targetDay: 5, dayName: '金曜日', pitch: 'B6' },
+            { id: 'day_sat', name: 'おでかけおばけ', desc: '【土曜日限定】トランクとカメラを下げて冒険に出発！', value: 1800, weight: 1.1, color: '#ecfeff', cheek: '#a5f3fc', accessory: 'day_sat', targetDay: 6, dayName: '土曜日', pitch: 'C7' }
+        ];
+
+        // 季節限定 12種
+        const MONTH_GHOST_TYPES = [
+            { id: 'month_1', name: 'かがみもちおばけ', desc: '【1月限定】頭の上にみかんと鏡餅を乗せて新春をお祝い', value: 5000, weight: 0.6, color: '#ffffff', cheek: '#fb923c', accessory: 'month_1', targetMonth: 1, monthName: '1月', pitch: 'C6' },
+            { id: 'month_2', name: 'チョコおばけ', desc: '【2月限定】甘いミルクチョコの香りを漂わせる恋のおばけ', value: 5200, weight: 0.6, color: '#fdf2f8', cheek: '#f43f5e', accessory: 'month_2', targetMonth: 2, monthName: '2月', pitch: 'D6' },
+            { id: 'month_3', name: 'さくらもちおばけ', desc: '【3月限定】桜の葉っぱを腰に巻いた春の訪れを告げる個体', value: 5500, weight: 0.6, color: '#fff1f2', cheek: '#fb7185', accessory: 'month_3', targetMonth: 3, monthName: '3月', pitch: 'E6' },
+            { id: 'month_4', name: 'チューリップおばけ', desc: '【4月限定】頭に真っ赤なチューリップを咲かせた新生活おばけ', value: 6000, weight: 0.6, color: '#f0fdf4', cheek: '#f87171', accessory: 'month_4', targetMonth: 4, monthName: '4月', pitch: 'F6' },
+            { id: 'month_5', name: 'こいのぼりおばけ', desc: '【5月限定】元気に空を泳ぐ鯉のぼりの帽子をかぶったわんぱく種', value: 6500, weight: 0.6, color: '#eff6ff', cheek: '#60a5fa', accessory: 'month_5', targetMonth: 5, monthName: '5月', pitch: 'G6' },
+            { id: 'month_6', name: 'あめふりおばけ', desc: '【6月限定】梅雨の雨粒と大きな葉っぱの傘を持った水たまり好き', value: 7000, weight: 0.6, color: '#e0f2fe', cheek: '#38bdf8', accessory: 'month_6', targetMonth: 6, monthName: '6月', pitch: 'A6' },
+            { id: 'month_7', name: 'たなばたおばけ', desc: '【7月限定】天の川に願いを込めて短冊をつけた星空おばけ', value: 7500, weight: 0.6, color: '#f5f3ff', cheek: '#a78bfa', accessory: 'month_7', targetMonth: 7, monthName: '7月', pitch: 'B6' },
+            { id: 'month_8', name: 'すいかおばけ', desc: '【8月限定】冷え冷えスイカのヘルメットをかぶった夏休み個体', value: 8000, weight: 0.6, color: '#f0fdf4', cheek: '#ef4444', accessory: 'month_8', targetMonth: 8, monthName: '8月', pitch: 'C7' },
+            { id: 'month_9', name: 'おつきみおばけ', desc: '【9月限定】満月を眺めながらお団子を頬張る風流なおばけ', value: 8800, weight: 0.6, color: '#fefce8', cheek: '#facc15', accessory: 'month_9', targetMonth: 9, monthName: '9月', pitch: 'D7' },
+            { id: 'month_10', name: 'パンプキンおばけ', desc: '【10月限定】ジャック・オー・ランタンをすっぽりかぶった秋の主役', value: 10000, weight: 0.6, color: '#fff7ed', cheek: '#ea580c', accessory: 'month_10', targetMonth: 10, monthName: '10月', pitch: 'E7' },
+            { id: 'month_11', name: 'やきいもおばけ', desc: '【11月限定】ホクホク湯気のあがる甘い焼き芋が大好物', value: 11000, weight: 0.6, color: '#fafaf9', cheek: '#d97706', accessory: 'month_11', targetMonth: 11, monthName: '11月', pitch: 'F7' },
+            { id: 'month_12', name: 'サンタおばけ', desc: '【12月限定】赤い三角帽とお髭をつけた聖夜の贈り主', value: 15000, weight: 0.6, color: '#fef2f2', cheek: '#ef4444', accessory: 'month_12', targetMonth: 12, monthName: '12月', pitch: 'G7' }
+        ];
+
+        // ログイン記念 7種
+        const MILESTONE_GHOST_TYPES = [
+            { id: 'login_3', name: 'みっかぼうずおばけ', desc: '【通算3日達成】数珠を身につけて三日坊主をあっさり突破した記念', value: 3333, weight: 0.9, color: '#fffbeb', cheek: '#f59e0b', accessory: 'login_3', reqDays: 3, pitch: 'E6' },
+            { id: 'login_7', name: 'はなまるおばけ', desc: '【通算7日達成】頭に大きな赤い💮を乗せた1週間皆勤記念', value: 7777, weight: 0.8, color: '#fff1f2', cheek: '#f43f5e', accessory: 'login_7', reqDays: 7, pitch: 'G6' },
+            { id: 'login_14', name: 'カレンダーおばけ', desc: '【通算14日達成】日めくりカレンダーを抱えた2週間記念', value: 14000, weight: 0.7, color: '#f0fdf4', cheek: '#10b981', accessory: 'login_14', reqDays: 14, pitch: 'A6' },
+            { id: 'login_30', name: 'かいきんしょうおばけ', desc: '【通算30日達成】胸に金メダル＆表彰状を広げた1ヶ月記念', value: 30000, weight: 0.6, color: '#fefce8', cheek: '#eab308', accessory: 'login_30', reqDays: 30, pitch: 'B6' },
+            { id: 'login_50', name: 'じゅうにんおばけ', desc: '【通算50日達成】モコモコスリッパとマグカップの住人記念', value: 50000, weight: 0.5, color: '#f5ebe0', cheek: '#b45309', accessory: 'login_50', reqDays: 50, pitch: 'C7' },
+            { id: 'login_100', name: 'ひゃくにんりきおばけ', desc: '【通算100日達成】博士帽と金色オーラの100日大先輩', value: 100000, weight: 0.4, color: '#faf5ff', cheek: '#a855f7', accessory: 'login_100', reqDays: 100, pitch: 'E7' },
+            { id: 'login_365', name: 'アニバーサリーおばけ', desc: '【通算365日達成】頭にキャンドルケーキを乗せた1周年伝説種', value: 3650000, weight: 0.3, color: '#ffffff', cheek: '#ec4899', accessory: 'login_365', reqDays: 365, pitch: 'G7' }
+        ];
+
+        const ALL_GHOSTS = [...REGULAR_GHOST_TYPES, ...WEEKDAY_GHOST_TYPES, ...MONTH_GHOST_TYPES, ...MILESTONE_GHOST_TYPES];
+        const GHOST_TYPES = ALL_GHOSTS;
+        const state = {
+            score: 0,
+            ghostCounts: {},
+            particles: [], 
+            floatingTexts: [],
+            unlockedDex: { 'normal': true, 'beret': true, 'sleepy': true, 'devil': true, 'king': true },
+            lvlSpeed: 1, 
+            lvlCap: 1, 
+            lvlRare: 1, 
+            lvlMagnet: 1,
+            feverTimeLeft: 0,
+            feverAvailableTimestamp: 0,
+            hasRoomba: false, 
+            roombaActive: true,
+            hasGoldenRoomba: false, 
+            goldenRoombaActive: false,
+            chargedTimeLeft: 0,
+            batteryHighPowerLeft: 7200,
+            lastBatteryResetCycle: "",
+            lvlRoombaSpeed: 1, 
+            lvlRoombaBattery: 1,
+            catcherCombo: 0,
+            catcherComboTimer: 0,
+            catcherComboMultiplier: 1.0,
+            roombaObj: { x: 150, y: 150, vx: 2.2, vy: 2.0, radius: 34 },
+            spawnAccumulatorMs: 0,
+            lastTickTime: Date.now(),
+            lastSavedTime: Date.now(),
+            hasCompletedTutorial: false,
+            bgmEnabled: true,
+            seEnabled: true,
+            bgmVolume: 70,
+            seVolume: 80,
+            activeDexTab: 'regular',
+            language: 'ja',
+            hasSelectedLanguage: false,
+            totalLoginDays: 1,
+            lastLoginCycle: "",
+            claimedMilestones: {}
+        };
+        ALL_GHOSTS.forEach(t => { if (state.ghostCounts[t.id] === undefined) state.ghostCounts[t.id] = 0; });
+        const I18N = {
+            ja: {
+                scoreTitle: "総獲得おばけ玉",
+                densityTitle: "おへや密度",
+                settingsBtn: "設定",
+                settingsTitle: "設定",
+                langHeading: "言語 (Language)",
+                dexBtn: "図鑑",
+                loginDays: (d) => `通算 ${d}日目`,
+                tabUpgrade: "🛠️ 育成・強化",
+                tabShop: "💎 キャッチャー",
+                tutorialToast: "👆 指でなぞっておばけを吸い込もう！",
+                saveIndicator: "保存",
+                seTitle: "効果音 (SE)",
+                doneBtn: "完了",
+                upgSpeedName: "⚡ 出現スピード",
+                upgSpeedDesc: "湧く間隔が短縮＆<br>一度にドバッと出現！",
+                upgCapName: "🏠 おへや拡張",
+                upgCapDesc: "おへやに溜められる<br>おばけの上限UP！",
+                upgRareName: "🌈 突然変異率",
+                upgRareDesc: "高額なレア＆珍種<br>おばけの出現率UP！",
+                upgMagName: "🧲 吸引パワー",
+                upgMagDesc: "指でなぞった時の<br>吸い込み範囲が拡大！",
+                catcherTitle: "🤖 おばけキャッチャー",
+                catcherFreeUnlockBtn: "無料でアンロック",
+                feverStartBtn: "今すぐ発動！",
+                catcherPause: "一時停止する",
+                catcherResume: "再開する",
+                catcherActive: "稼働中",
+                catcherPausedBadge: "一時停止中",
+                catcherLocked: "未解放",
+                feverTitle: "🔥 フィーバー",
+                feverTime: "20秒",
+                feverAdBtn: "📺 お試し発動",
+                bannerFastTitle: "強力バッテリー稼働中！",
+                bannerFastLabel: "放置枠",
+                bannerEcoTitle: "キャッチャー一時停止中",
+                bannerEcoSub: "タップで再開",
+                dexTitleRegular: "📖 通常おばけ図鑑 (全30種)",
+                dexTitleSpecial: "📅 曜日・季節おばけ (全19種)",
+                dexTitleLogin: "🏆 通算記念おばけ (全7種)",
+                dexTabRegular: "通常 (30種)",
+                dexTabSpecial: "📅 曜日・季節 (19種)",
+                dexTabLogin: "🏆 通算記念 (7種)",
+                dexInRoom: "出現中!",
+                dexUnlockedTotal: "回収累計",
+                dexReadyUnlock: "🎉 解放条件達成！",
+                dexUnlockBtn: "解放する！",
+                dexReqCondition: "🔓 解放条件:",
+                dexProgress: "進捗:",
+                dexUnitGhosts: "匹",
+                dexInitialUnlocked: "初期解放済み",
+                tutTitle: "ポップゴーストへようこそ！",
+                tutBody: "おへやの中にゆるかわなおばけが次々と現れます<br>指でなぞって吸い込みおばけ玉を集めよう！<br><br>👻 <b>お化けを捕まえて図鑑完成を目指そう！</b><br>📅 <b>曜日・季節限定のレアおばけも登場！</b><br>🏆 <b>毎日遊んで通算ログイン記念おばけをゲット！</b>",
+                tutGoBtn: "おへやへ行く！ ➔",
+                comingSoonToast: "※製品版（アプリ版）で実装予定の機能です！お楽しみに！",
+                feverCooldownMsg: (m, s) => `⏳ フィーバーはクールダウン中です（残り ${m}分${s}秒）`,
+                feverStartMsg: "🔥【試験版】フィーバー20秒が発動！吸い込むと2匹に分裂！",
+                feverEndMsg: "フィーバータイムが終了しました",
+                catcherUnlockedMsg: "🎉 【試験版】おばけキャッチャーを無料でアンロックしました！",
+                catcherPausedMsg: "キャッチャーを一時停止しました",
+                catcherResumedMsg: "キャッチャーを再開しました",
+                dexRegisteredMsg: (name) => `🎉「${name}」を図鑑に登録しました！`,
+                dexReadyMsg: (name) => `📖 図鑑で「${name}」が解放可能になりました！`,
+                dexUnlockedMsg: (name) => `🎉「${name}」を解放しました！お部屋に出現します！`,
+                offlineTitle: "おかえりなさい！",
+                offlineTime: "離れていた時間:",
+                offlineCaught: "回収したおばけ:",
+                offlineAccumulated: "溜まったおばけ:",
+                offlineHint: "💡 <b>キャッチャーを起動すると、留守中も自動で掃除してくれます！</b>",
+                loginInfoTitle: "🏆 通算ログイン状況",
+                loginInfoMsg: "マイペースに遊んでくれてありがとう！",
+                loginInfoNext: "次の記念おばけ:",
+                loginInfoDiff: (d) => `あと <b>${d}日</b> ログインするとお部屋にやってきます！`,
+                loginInfoComplete: "全記念達成！",
+                loginInfoCompleteMsg: "365日分のすべての記念おばけを迎えました！これからもポップゴーストをよろしくね！",
+                dayNames: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+                monthNames: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                unknown: '？？？'
+            },
+            en: {
+                scoreTitle: "Ghost Orbs",
+                densityTitle: "Room Density",
+                settingsBtn: "Settings",
+                settingsTitle: "Settings",
+                langHeading: "Language",
+                dexBtn: "Dex",
+                loginDays: (d) => `Day ${d}`,
+                tabUpgrade: "🛠️ Upgrades",
+                tabShop: "💎 Catcher",
+                tutorialToast: "👆 Swipe to vacuum up ghosts!",
+                saveIndicator: "Saved",
+                seTitle: "Sound FX (SE)",
+                doneBtn: "Done",
+                upgSpeedName: "⚡ Spawn Speed",
+                upgSpeedDesc: "Faster spawn rate &<br>spawns in larger bursts!",
+                upgCapName: "🏠 Room Capacity",
+                upgCapDesc: "Increase max number of<br>ghosts in the room!",
+                upgRareName: "🌈 Mutation Rate",
+                upgRareDesc: "Higher chance for rare<br>and high-value ghosts!",
+                upgMagName: "🧲 Vacuum Power",
+                upgMagDesc: "Wider absorption area<br>when swiping!",
+                catcherTitle: "🤖 Ghost Catcher",
+                catcherFreeUnlockBtn: "Free Unlock",
+                feverStartBtn: "Activate Now!",
+                catcherPause: "Pause",
+                catcherResume: "Resume",
+                catcherActive: "Active",
+                catcherPausedBadge: "Paused",
+                catcherLocked: "Locked",
+                feverTitle: "🔥 Fever",
+                feverTime: "20s",
+                feverAdBtn: "📺 Free Try",
+                bannerFastTitle: "Power Battery Active!",
+                bannerFastLabel: "Offline Cap",
+                bannerEcoTitle: "Catcher Paused",
+                bannerEcoSub: "Tap to resume",
+                dexTitleRegular: "📖 Regular Ghost Dex (30)",
+                dexTitleSpecial: "📅 Seasonal Ghosts (19)",
+                dexTitleLogin: "🏆 Milestone Ghosts (7)",
+                dexTabRegular: "Regular (30)",
+                dexTabSpecial: "📅 Seasonal (19)",
+                dexTabLogin: "🏆 Milestones (7)",
+                dexInRoom: "In Room!",
+                dexUnlockedTotal: "Caught Total",
+                dexReadyUnlock: "🎉 Ready to Unlock!",
+                dexUnlockBtn: "Unlock!",
+                dexReqCondition: "🔓 Requirements:",
+                dexProgress: "Progress:",
+                dexUnitGhosts: "ghosts",
+                dexInitialUnlocked: "Unlocked by default",
+                tutTitle: "Welcome to Pop Ghost!",
+                tutBody: "Cute ghosts appear in your room one after another!<br>Swipe with your finger to suck them up and collect Ghost Orbs!<br><br>👻 <b>Catch ghosts to complete your dex!</b><br>📅 <b>Discover weekday & seasonal limited ghosts!</b><br>🏆 <b>Log in daily to meet special milestone ghosts!</b>",
+                tutGoBtn: "Enter Room! ➔",
+                comingSoonToast: "This feature will be available in the full release version!",
+                feverCooldownMsg: (m, s) => `⏳ Fever is on cooldown (${m}m ${s}s left)`,
+                feverStartMsg: "🔥 Fever mode activated for 20s! Ghosts split into two!",
+                feverEndMsg: "Fever time has ended.",
+                catcherUnlockedMsg: "🎉 Ghost Catcher unlocked for free! [Test Version]",
+                catcherPausedMsg: "Ghost Catcher paused.",
+                catcherResumedMsg: "Ghost Catcher resumed.",
+                dexRegisteredMsg: (name) => `🎉 Registered "${name}" to Dex!`,
+                dexReadyMsg: (name) => `📖 "${name}" is ready to be unlocked in Dex!`,
+                dexUnlockedMsg: (name) => `🎉 Unlocked "${name}"! It will now appear in your room!`,
+                offlineTitle: "Welcome Back!",
+                offlineTime: "Time Away:",
+                offlineCaught: "Ghosts Caught:",
+                offlineAccumulated: "Ghosts Gathered:",
+                offlineHint: "💡 <b>Activate the Catcher to auto-clean while you're away!</b>",
+                loginInfoTitle: "🏆 Login Status",
+                loginInfoMsg: "Thanks for playing at your own pace!",
+                loginInfoNext: "Next Milestone Ghost:",
+                loginInfoDiff: (d) => `Log in for <b>${d} more days</b> to meet it!`,
+                loginInfoComplete: "All Milestones Achieved!",
+                loginInfoCompleteMsg: "You've met all 365 days worth of milestone ghosts! Thanks for playing Pop Ghost!",
+                dayNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                unknown: '???'
+            },
+            zh: {
+                scoreTitle: "幽灵宝玉总数",
+                densityTitle: "房间密度",
+                settingsBtn: "设置",
+                settingsTitle: "设置",
+                langHeading: "语言 (Language)",
+                dexBtn: "图鉴",
+                loginDays: (d) => `累计第 ${d} 天`,
+                tabUpgrade: "🛠️ 培育强化",
+                tabShop: "💎 捕获机",
+                tutorialToast: "👆 滑动手指吸入幽灵吧！",
+                saveIndicator: "已保存",
+                seTitle: "音效 (SE)",
+                doneBtn: "完成",
+                upgSpeedName: "⚡ 出没速度",
+                upgSpeedDesc: "缩短产生间隔＆<br>一次涌现更多幽灵！",
+                upgCapName: "🏠 房间扩充",
+                upgCapDesc: "提升房间内可容纳的<br>幽灵数量上限！",
+                upgRareName: "🌈 突变几率",
+                upgRareDesc: "提高高额稀有＆珍奇<br>幽灵的出现几率！",
+                upgMagName: "🧲 吸入威力",
+                upgMagDesc: "手指滑动时的<br>吸取范围大幅扩大！",
+                catcherTitle: "🤖 幽灵捕获机",
+                catcherFreeUnlockBtn: "免费解锁",
+                feverStartBtn: "立即开启！",
+                catcherPause: "暂时停止",
+                catcherResume: "重新开启",
+                catcherActive: "运行中",
+                catcherPausedBadge: "已暂停",
+                catcherLocked: "未解锁",
+                feverTitle: "🔥 狂热时刻",
+                feverTime: "20秒",
+                feverAdBtn: "📺 免费体验",
+                bannerFastTitle: "强力电池运行中！",
+                bannerFastLabel: "放置额度",
+                bannerEcoTitle: "捕获机已暂停",
+                bannerEcoSub: "点击重新开启",
+                dexTitleRegular: "📖 常规幽灵图鉴 (共30种)",
+                dexTitleSpecial: "📅 星期·季节幽灵 (共19种)",
+                dexTitleLogin: "🏆 累计纪念幽灵 (共7种)",
+                dexTabRegular: "常规 (30种)",
+                dexTabSpecial: "📅 星期·季节 (19种)",
+                dexTabLogin: "🏆 累计纪念 (7种)",
+                dexInRoom: "出没中!",
+                dexUnlockedTotal: "累计收集",
+                dexReadyUnlock: "🎉 解锁条件达成！",
+                dexUnlockBtn: "立即解锁！",
+                dexReqCondition: "🔓 解锁条件:",
+                dexProgress: "进度:",
+                dexUnitGhosts: "只",
+                dexInitialUnlocked: "初始已解锁",
+                tutTitle: "欢迎来到 萌幽灵派对！",
+                tutBody: "可爱的萌系幽灵们会陆续来到你的房间！<br>用手指滑动吸入它们，收集幽灵宝玉吧！<br><br>👻 <b>捕捉幽灵以达成全图鉴收集！</b><br>📅 <b>星期和月份限定的珍奇幽灵等你发现！</b><br>🏆 <b>每天登录即可迎来限定纪念幽灵！</b>",
+                tutGoBtn: "进入房间！ ➔",
+                comingSoonToast: "此功能将在正式发布版中推出，敬请期待！",
+                feverCooldownMsg: (m, s) => `⏳ 狂热时刻正在冷却中（还剩 ${m}分${s}秒）`,
+                feverStartMsg: "🔥 狂热时刻启动（20秒）！吸入的幽灵会一分为二！",
+                feverEndMsg: "狂热时刻已结束。",
+                catcherUnlockedMsg: "🎉 已免费解锁幽灵捕获机！【测试版】",
+                catcherPausedMsg: "捕获机已暂停。",
+                catcherResumedMsg: "捕获机已重新启动。",
+                dexRegisteredMsg: (name) => `🎉 将「${name}」登记到图鉴了！`,
+                dexReadyMsg: (name) => `📖 图鉴中的「${name}」已可解锁！`,
+                dexUnlockedMsg: (name) => `🎉 已解锁「${name}」！它将出现在房间里！`,
+                offlineTitle: "欢迎回来！",
+                offlineTime: "离开时间:",
+                offlineCaught: "捕获的幽灵:",
+                offlineAccumulated: "积攒的幽灵:",
+                offlineHint: "💡 <b>开启捕获机后，即使您不在它也会自动打扫！</b>",
+                loginInfoTitle: "🏆 累计登录状态",
+                loginInfoMsg: "感谢你按自己的节奏游玩！",
+                loginInfoNext: "下一个纪念幽灵：",
+                loginInfoDiff: (d) => `再登录 <b>${d} 天</b> 它就会来到你的房间！`,
+                loginInfoComplete: "全纪念达成！",
+                loginInfoCompleteMsg: "你已迎来了365天的所有纪念幽灵！今后也请多多关照萌幽灵派对！",
+                dayNames: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+                monthNames: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                unknown: '？？？'
+            },
+            ko: {
+                scoreTitle: "총 획득 유령구슬",
+                densityTitle: "방 밀도",
+                settingsBtn: "설정",
+                settingsTitle: "설정",
+                langHeading: "언어 (Language)",
+                dexBtn: "도감",
+                loginDays: (d) => `통산 ${d}일차`,
+                tabUpgrade: "🛠️ 육성·강화",
+                tabShop: "💎 캐처",
+                tutorialToast: "👆 손가락으로 문질러 유령을 흡입하세요!",
+                saveIndicator: "저장됨",
+                seTitle: "효과음 (SE)",
+                doneBtn: "완료",
+                upgSpeedName: "⚡ 출현 속도",
+                upgSpeedDesc: "등장 간격 단축＆<br>한 번에 대량 출현!",
+                upgCapName: "🏠 방 확장",
+                upgCapDesc: "방에 모아둘 수 있는<br>유령 최대 수 증가!",
+                upgRareName: "🌈 돌연변이율",
+                upgRareDesc: "값비싼 레어＆희귀종<br>유령의 출현 확률 UP!",
+                upgMagName: "🧲 흡입 파워",
+                upgMagDesc: "손가락으로 문지를 때의<br>흡입 범위 확대!",
+                catcherTitle: "🤖 유령 캐처",
+                catcherFreeUnlockBtn: "무료 잠금 해제",
+                feverStartBtn: "지금 발동!",
+                catcherPause: "일시 정지하기",
+                catcherResume: "재가동하기",
+                catcherActive: "가동 중",
+                catcherPausedBadge: "일시 정지",
+                catcherLocked: "미해금",
+                feverTitle: "🔥 피버",
+                feverTime: "20초",
+                feverAdBtn: "📺 무료 발동",
+                bannerFastTitle: "강력 배터 가동 중!",
+                bannerFastLabel: "방치 여유",
+                bannerEcoTitle: "캐처 일시 정지 중",
+                bannerEcoSub: "터치하여 재개",
+                dexTitleRegular: "📖 일반 유령 도감 (총 30종)",
+                dexTitleSpecial: "📅 요일·계절 유령 (총 19종)",
+                dexTitleLogin: "🏆 통산 기념 유령 (총 7종)",
+                dexTabRegular: "일반 (30종)",
+                dexTabSpecial: "📅 요일·계절 (19종)",
+                dexTabLogin: "🏆 통산 기념 (7종)",
+                dexInRoom: "출현 중!",
+                dexUnlockedTotal: "누적 수거",
+                dexReadyUnlock: "🎉 해금 조건 달성!",
+                dexUnlockBtn: "해금하기!",
+                dexReqCondition: "🔓 해금 조건:",
+                dexProgress: "진척도:",
+                dexUnitGhosts: "마리",
+                dexInitialUnlocked: "초기 해금 완료",
+                tutTitle: "팝 고스트에 오신 것을 환영합니다!",
+                tutBody: "방 안에 귀여운 유령들이 잇따라 나타납니다!<br>손가락으로 쓱 문질러 흡입하고 유령구슬을 모아보세요!<br><br>👻 <b>유령을 잡아 도감 완성을 노려보세요!</b><br>📅 <b>요일 및 계절 한정 레어 유령도 등장!</b><br>🏆 <b>매일 플레이하고 통산 로그인 기념 유령을 맞이하세요!</b>",
+                tutGoBtn: "방으로 가기! ➔",
+                comingSoonToast: "정식 출시 버전에서 구현될 예정인 기능입니다!",
+                feverCooldownMsg: (m, s) => `⏳ 피버 재사용 대기 중입니다 (남은 시간 ${m}분 ${s}초)`,
+                feverStartMsg: "🔥 피버 모드 20초 발동! 유령이 두 마리로 분열합니다!",
+                feverEndMsg: "피버 타임이 종료되었습니다.",
+                catcherUnlockedMsg: "🎉 유령 캐처 무료 잠금 해제 완료! [테스트 버전]",
+                catcherPausedMsg: "유령 캐처를 일시 정지했습니다.",
+                catcherResumedMsg: "유령 캐처를 재가동했습니다.",
+                dexRegisteredMsg: (name) => `🎉 「${name}」을(를) 도감에 등록했습니다!`,
+                dexReadyMsg: (name) => `📖 도감에서 「${name}」을(를) 해금할 수 있습니다!`,
+                dexUnlockedMsg: (name) => `🎉 「${name}」 해금 완료! 방에 출현하기 시작합니다!`,
+                offlineTitle: "다녀오셨나요!",
+                offlineTime: "자리를 비운 시간:",
+                offlineCaught: "수거한 유령:",
+                offlineAccumulated: "모인 유령:",
+                offlineHint: "💡 <b>캐처를 켜두면 자리를 비운 동안에도 자동으로 청소합니다!</b>",
+                loginInfoTitle: "🏆 통산 로그인 현황",
+                loginInfoMsg: "당신의 페이스대로 플레이해 주셔서 감사합니다!",
+                loginInfoNext: "다음 기념 유령:",
+                loginInfoDiff: (d) => `앞으로 <b>${d}일</b> 더 로그인하면 방에 찾아옵니다!`,
+                loginInfoComplete: "모든 기념 달성!",
+                loginInfoCompleteMsg: "365일치의 모든 기념 유령을 맞이했습니다! 앞으로도 팝 고스트를 잘 부탁해!",
+                dayNames: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
+                monthNames: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                unknown: '???'
+            }
+        };
+
+        const GHOST_LOCALES = {
+            en: {
+                normal: { name: "Plain Ghost", desc: "A simple, sweet ghost with softly blushing pink cheeks." },
+                beret: { name: "Beret Ghost", desc: "An artistic ghost inspired by endless creative ideas." },
+                sleepy: { name: "Sleepy Ghost", desc: "Always drowsy and almost liquid in its laziness." },
+                devil: { name: "Mischief Ghost", desc: "A slightly naughty mutant with cute little horns." },
+                king: { name: "King Ghost", desc: "A legendary golden sovereign. Finding it brings great fortune!" },
+                cat: { name: "Cat-Ear Ghost", desc: "Wears cat ears and wanders around whimsically." },
+                angel: { name: "Angel Ghost", desc: "A soothing ghost with tiny wings and a halo." },
+                punk: { name: "Punk Ghost", desc: "A rocking ghost with a mohawk and spiky accessories." },
+                wizard: { name: "Wizard Ghost", desc: "Wears a big pointy hat and casts mysterious spells." },
+                galaxy: { name: "Galaxy Ghost", desc: "An elusive ghost clad in the stars of the universe." },
+                ninja: { name: "Ninja Ghost", desc: "A stealthy ghost moving silently in the dark of night." },
+                pirate: { name: "Pirate Ghost", desc: "A seafarer seeking treasure with an eye patch." },
+                doctor: { name: "Dentist Ghost", desc: "Carries a giant toothbrush to fight cavities." },
+                chef: { name: "Chef Ghost", desc: "A gourmet ghost with a special omelet on its head." },
+                detective: { name: "Detective Ghost", desc: "A sharp mind who never misses a tiny clue." },
+                bunny: { name: "Bunny Ghost", desc: "A cute lop-eared ghost bouncing around happily." },
+                alien: { name: "Alien Ghost", desc: "An extraterrestrial encounter from a UFO." },
+                dracula: { name: "Dracula Ghost", desc: "A dapper vampire strolling through the night." },
+                ghost_cat: { name: "Mage Cat Ghost", desc: "A feline wizard mesmerizing all with glowing eyes." },
+                flower: { name: "Sakura Ghost", desc: "A messenger of spring with blooming sakura on its head." },
+                snowman: { name: "Snowman Ghost", desc: "A winter-exclusive model frozen stiff." },
+                robot: { name: "Cyborg Ghost", desc: "A futuristic ghost integrated with mechanical parts." },
+                samurai: { name: "Samurai Ghost", desc: "A proud warrior carrying a katana on its back." },
+                dragon: { name: "Dragon Knight", desc: "A noble warrior riding a dragon through the sky." },
+                unicorn: { name: "Unicorn Ghost", desc: "A mystical beast ghost with a rainbow mane." },
+                phoenix: { name: "Phoenix Ghost", desc: "An immortal soul clad in wings of fire." },
+                pharaoh: { name: "Pharaoh Ghost", desc: "A king wearing the golden mask of ancient Egypt." },
+                emperor: { name: "Mythic Ghost", desc: "An ancestor existing since the age of myths." },
+                cosmos: { name: "Cosmo Ghost", desc: "A divine entity embodying the providence of the universe." },
+                god: { name: "God Ghost", desc: "The ultimate ghost, creator of this world." },
+                day_sun: { name: "Holiday Ghost", desc: "[Sun Only] Lounging all day in a favorite nightcap." },
+                day_mon: { name: "Latte Ghost", desc: "[Mon Only] Cheering up sluggish Mondays with a warm mug." },
+                day_tue: { name: "Blazing Ghost", desc: "[Tue Only] Fired up to get through the week." },
+                day_wed: { name: "Sweets Ghost", desc: "[Wed Only] A mid-week treat with a healing pudding." },
+                day_thu: { name: "Reading Ghost", desc: "[Thu Only] Quietly turning pages with round glasses." },
+                day_fri: { name: "TGIF Ghost", desc: "[Fri Only] Wearing a party hat full of weekend vibes." },
+                day_sat: { name: "Outing Ghost", desc: "[Sat Only] Off on an adventure with a trunk and camera!" },
+                month_1: { name: "Kagami Mochi", desc: "[Jan Only] Celebrating the new year with a mochi on top." },
+                month_2: { name: "Choco Ghost", desc: "[Feb Only] The scent of sweet milk chocolate is in the air." },
+                month_3: { name: "Sakura Mochi", desc: "[Mar Only] Heralding spring with a sakura leaf wrap." },
+                month_4: { name: "Tulip Ghost", desc: "[Apr Only] Blooming a red tulip for a fresh start." },
+                month_5: { name: "Carp Streamer", desc: "[May Only] Energetically swimming the sky in a carp hat." },
+                month_6: { name: "Rainy Ghost", desc: "[Jun Only] Loves puddles with an umbrella leaf." },
+                month_7: { name: "Tanabata Ghost", desc: "[Jul Only] A starry ghost with a wish slip." },
+                month_8: { name: "Watermelon", desc: "[Aug Only] Summer vacation mode with a watermelon helmet." },
+                month_9: { name: "Moon Viewing", desc: "[Sep Only] Elegantly eating dango under the full moon." },
+                month_10: { name: "Pumpkin Ghost", desc: "[Oct Only] The star of autumn wearing a Jack-o'-lantern." },
+                month_11: { name: "Baked Potato", desc: "[Nov Only] Loves piping hot, sweet baked potatoes." },
+                month_12: { name: "Santa Ghost", desc: "[Dec Only] The holy night gift-bringer with a red hat." },
+                login_3: { name: "3-Day Ghost", desc: "[Day 3] Survived the 3-day hump wearing prayer beads!" },
+                login_7: { name: "Hanamaru Ghost", desc: "[Day 7] A 1-week perfect attendance mark on its head." },
+                login_14: { name: "Calendar Ghost", desc: "[Day 14] Holding a tear-off calendar for 2 weeks." },
+                login_30: { name: "Medal Ghost", desc: "[Day 30] Showing off a gold medal for 1 month!" },
+                login_50: { name: "Resident Ghost", desc: "[Day 50] Cozy with fluffy slippers and a mug." },
+                login_100: { name: "Senior Ghost", desc: "[Day 100] A 100-day veteran glowing with a golden aura." },
+                login_365: { name: "Anniversary", desc: "[Day 365] 1st Anniversary legend with a candle cake!" }
+            },
+            zh: {
+                normal: { name: "素颜幽灵", desc: "随处可见的质朴幽灵，脸颊微微泛着粉红。" },
+                beret: { name: "贝雷帽幽灵", desc: "充满艺术灵感的画家风幽灵。" },
+                sleepy: { name: "贪睡幽灵", desc: "总是昏昏欲睡，懒得几乎化成了液体。" },
+                devil: { name: "淘气幽灵", desc: "头上长着可爱小尖角的小恶作剧变异种。" },
+                king: { name: "王者幽灵", desc: "金光闪闪的传说级幽灵，发现它会带来大丰收！" },
+                cat: { name: "猫耳幽灵", desc: "戴着猫耳，随心所欲地四处飘荡。" },
+                angel: { name: "天使幽灵", desc: "长着小翅膀和光环的治愈系幽灵。" },
+                punk: { name: "朋克幽灵", desc: "留着莫西干头、戴着尖刺饰品的摇滚幽灵。" },
+                wizard: { name: "魔法师幽灵", desc: "戴着大大的尖顶帽，施展着神奇的魔法。" },
+                galaxy: { name: "银河幽灵", desc: "披着宇宙星辰，神出鬼没的终极形态。" },
+                ninja: { name: "忍者幽灵", desc: "潜伏在黑夜中，悄无声息的隐密幽灵。" },
+                pirate: { name: "海盗幽灵", desc: "戴着眼罩寻找宝藏的航海者。" },
+                doctor: { name: "牙医幽灵", desc: "拿着巨大的牙刷来消灭蛀牙。" },
+                chef: { name: "厨师幽灵", desc: "头上顶着特制蛋包饭的美食家。" },
+                detective: { name: "名侦探幽灵", desc: "用放大镜绝不放过任何微小线索的聪明家伙。" },
+                bunny: { name: "兔耳幽灵", desc: "蹦蹦跳跳的可爱垂耳兔风幽灵。" },
+                alien: { name: "外星幽灵", desc: "乘坐UFO到来的第三类接触。" },
+                dracula: { name: "吸血鬼幽灵", desc: "披着披风在夜晚的街道阔步的绅士。" },
+                ghost_cat: { name: "猫魔导幽灵", desc: "猫咪魔法师，用闪烁诡异光芒的眼睛魅惑一切。" },
+                flower: { name: "赏花幽灵", desc: "头顶盛开樱花的春之使者。" },
+                snowman: { name: "雪人幽灵", desc: "因寒冷而冻得硬邦邦的冬季限定款。" },
+                robot: { name: "赛博幽灵", desc: "全身装配机械零件的近未来型。" },
+                samurai: { name: "武士幽灵", desc: "崇尚武士道，背后背着骄傲的武士刀。" },
+                dragon: { name: "龙骑士幽灵", desc: "驾驭巨龙翱翔天际的高贵战士。" },
+                unicorn: { name: "独角兽幽灵", desc: "拥有彩虹色鬃毛的神秘幻兽。" },
+                phoenix: { name: "不死鸟幽灵", desc: "身披火焰之翼，能够浴火重生的灵魂。" },
+                pharaoh: { name: "法老幽灵", desc: "戴着古埃及黄金面具的国王。" },
+                emperor: { name: "神话幽灵", desc: "自神话时代便存在的所有幽灵的祖先。" },
+                cosmos: { name: "宇宙幽灵", desc: "内含大宇宙法则本身的神圣个体。" },
+                god: { name: "神之幽灵", desc: "穷极一切的这个世界的创造主。" },
+                day_sun: { name: "假日幽灵", desc: "【周日限定】戴着心爱的睡帽滚来滚去。" },
+                day_mon: { name: "拿铁幽灵", desc: "【周一限定】用温暖的马克杯为你加油打气。" },
+                day_tue: { name: "燃烧幽灵", desc: "【周二限定】头顶燃烧着干劲的火焰度过这周。" },
+                day_wed: { name: "甜点幽灵", desc: "【周三限定】头顶治愈布丁的周中小憩。" },
+                day_thu: { name: "读书幽灵", desc: "【周四限定】戴着圆眼镜安静翻书的读书家。" },
+                day_fri: { name: "周五幽灵", desc: "【周五限定】充满周末解放感的派对狂欢者。" },
+                day_sat: { name: "出游幽灵", desc: "【周六限定】提着旅行箱带上相机出发冒险！" },
+                month_1: { name: "镜饼幽灵", desc: "【1月限定】头顶橘子和镜饼庆祝新春。" },
+                month_2: { name: "巧克力幽灵", desc: "【2月限定】散发着甜美牛奶巧克力香气的恋爱幽灵。" },
+                month_3: { name: "樱饼幽灵", desc: "【3月限定】腰间卷着樱花叶宣告春天到来。" },
+                month_4: { name: "郁金香幽灵", desc: "【4月限定】头顶绽放红色郁金香的新生活幽灵。" },
+                month_5: { name: "鲤鱼旗幽灵", desc: "【5月限定】戴着在天空畅游的鲤鱼旗帽子的淘气鬼。" },
+                month_6: { name: "下雨幽灵", desc: "【6月限定】拿着雨滴和巨大叶子伞的水洼爱好者。" },
+                month_7: { name: "七夕幽灵", desc: "【7月限定】带着写满心愿的书签的星空幽灵。" },
+                month_8: { name: "西瓜幽灵", desc: "【8月限定】戴着冰镇西瓜头盔的暑假限定。" },
+                month_9: { name: "赏月幽灵", desc: "【9月限定】一边赏月一边大口吃团子的风雅幽灵。" },
+                month_10: { name: "南瓜幽灵", desc: "【10月限定】套着杰克南瓜灯的秋季主角。" },
+                month_11: { name: "烤地瓜幽灵", desc: "【11月限定】最爱冒着热气的香甜烤地瓜。" },
+                month_12: { name: "圣诞幽灵", desc: "【12月限定】戴着红帽子和白胡子的平安夜使者。" },
+                login_3: { name: "三分钟热度", desc: "【累计3天】戴着念珠，轻松突破三分钟热度的纪念。" },
+                login_7: { name: "小红花幽灵", desc: "【累计7天】头顶巨大红花💮的1周全勤纪念。" },
+                login_14: { name: "日历幽灵", desc: "【累计14天】抱着日历的2周纪念。" },
+                login_30: { name: "全勤奖幽灵", desc: "【累计30天】胸前挂着金牌展示奖状的1个月纪念。" },
+                login_50: { name: "住客幽灵", desc: "【累计50天】穿着毛绒拖鞋拿着马克杯的常驻纪念。" },
+                login_100: { name: "百人斩幽灵", desc: "【累计100天】戴着博士帽散发金色光芒的100天大前辈。" },
+                login_365: { name: "周年纪念", desc: "【累计365天】头顶蜡烛蛋糕的1周年传说种。" }
+            },
+            ko: {
+                normal: { name: "민낯 유령", desc: "어디에나 있는 소박한 유령. 뺨이 살짝 핑크빛입니다." },
+                beret: { name: "베레모 유령", desc: "창의적인 영감이 번뜩이는 예술가풍 유령." },
+                sleepy: { name: "잠꾸러기 유령", desc: "늘 졸려 보이며 거의 액체화된 게으름뱅이." },
+                devil: { name: "장난꾸러기 유령", desc: "작은 뿔이 난 귀여운 악동 돌연변이종." },
+                king: { name: "왕 유령", desc: "황금빛으로 빛나는 전설의 개체. 발견하면 대박!" },
+                cat: { name: "고양이귀 유령", desc: "고양이 귀를 달고 변덕스럽게 둥둥 떠다닙니다." },
+                angel: { name: "천사 유령", desc: "작은 날개와 링이 달린 치유계 유령." },
+                punk: { name: "펑크 유령", desc: "모히칸 헤어에 가시 장식을 한 록 스피릿 유령." },
+                wizard: { name: "마법사 유령", desc: "커다란 꼬깔모자를 쓰고 신비한 마법을 부립니다." },
+                galaxy: { name: "갤럭시 유령", desc: "우주의 별들을 두른 궁극의 신출귀몰 유령." },
+                ninja: { name: "닌자 유령", desc: "어둠에 섞여 소리 없이 빠르게 이동하는 은밀 유령." },
+                pirate: { name: "해적 유령", desc: "안대를 하고 보물을 찾아 헤매는 바다의 사나이." },
+                doctor: { name: "치과의사 유령", desc: "충치를 퇴치하기 위해 거대한 칫솔을 들고 있습니다." },
+                chef: { name: "요리사 유령", desc: "특제 오므라이스를 머리에 얹은 미식가 유령." },
+                detective: { name: "명탐정 유령", desc: "돋보기로 작은 단서도 놓치지 않는 명석한 유령." },
+                bunny: { name: "토끼귀 유령", desc: "깡총깡총 뛰어다니는 큐트한 롭이어 스타일." },
+                alien: { name: "외계인 유령", desc: "UFO를 타고 나타난 미지와의 조우." },
+                dracula: { name: "드라큘라 유령", desc: "망토를 휘날리며 밤거리를 활보하는 댄디보이." },
+                ghost_cat: { name: "고양이 마도사", desc: "괴상하게 빛나는 눈으로 모든 걸 매혹하는 고양이 마법사." },
+                flower: { name: "꽃구경 유령", desc: "머리 위에 만개한 벚꽃을 피운 봄의 사자." },
+                snowman: { name: "눈사람 유령", desc: "추위에 꽁꽁 얼어붙은 겨울 한정 모델." },
+                robot: { name: "사이보그 유령", desc: "기계 부품을 전신에 조립한 근미래형." },
+                samurai: { name: "사무라이 유령", desc: "무사도를 중시하며 등에 긍지 높은 칼을 메고 있습니다." },
+                dragon: { name: "용기사 유령", desc: "드래곤을 길들여 하늘을 달리는 고고한 전사." },
+                unicorn: { name: "유니콘 유령", desc: "무지갯빛 갈기를 가진 신비의 환수 유령." },
+                phoenix: { name: "불사조 유령", desc: "불꽃의 날개를 두르고 몇 번이고 되살아나는 혼." },
+                pharaoh: { name: "파라오 유령", desc: "고대 이집트의 황금 가면을 쓴 왕." },
+                emperor: { name: "신화 유령", desc: "신화 시대부터 존재하는 모든 유령의 조상." },
+                cosmos: { name: "코스모스 유령", desc: "대우주의 섭리 자체를 내포한 신성 개체." },
+                god: { name: "갓 유령", desc: "모든 것을 극복한 이 세계의 창조주인 궁극의 유령." },
+                day_sun: { name: "홀리데이 유령", desc: "[일요일 한정] 즐겨 쓰는 나이트캡으로 하루 종일 뒹굴뒹굴." },
+                day_mon: { name: "카페라테 유령", desc: "[월요일 한정] 따뜻한 머그컵으로 나른한 월요일을 응원." },
+                day_tue: { name: "활활 유령", desc: "[화요일 한정] 머리에 불꽃을 켜고 이번 주를 버티는 의욕 충만." },
+                day_wed: { name: "디저트 유령", desc: "[수요일 한정] 주의 한가운데 힐링 푸딩을 얹은 모습." },
+                day_thu: { name: "독서 유령", desc: "[목요일 한정] 동그란 안경을 쓰고 조용히 책을 넘기는 독서가." },
+                day_fri: { name: "불금 유령", desc: "[금요일 한정] 주말의 해방감으로 가득한 파티 모자." },
+                day_sat: { name: "외출 유령", desc: "[토요일 한정] 트렁크와 카메라를 들고 모험으로 출발!" },
+                month_1: { name: "카가미모찌 유령", desc: "[1월 한정] 머리 위에 귤과 떡을 얹고 새해를 축하." },
+                month_2: { name: "초코 유령", desc: "[2월 한정] 달콤한 밀크초콜릿 향기를 풍기는 사랑의 유령." },
+                month_3: { name: "사쿠라모찌 유령", desc: "[3월 한정] 벚나무 잎을 허리에 감고 봄을 알리는 개체." },
+                month_4: { name: "튤립 유령", desc: "[4월 한정] 머리에 새빨간 튤립을 피운 새 출발 유령." },
+                month_5: { name: "코이노보리 유령", desc: "[5월 한정] 하늘을 헤엄치는 잉어 깃발 모자를 쓴 개구쟁이." },
+                month_6: { name: "비내림 유령", desc: "[6월 한정] 빗방울과 커다란 잎사귀 우산을 든 웅덩이 마니아." },
+                month_7: { name: "칠석 유령", desc: "[7월 한정] 은하수에 소원을 담아 단책을 단 별하늘 유령." },
+                month_8: { name: "수박 유령", desc: "[8월 한정] 시원한 수박 헬멧을 쓴 여름방학 개체." },
+                month_9: { name: "달맞이 유령", desc: "[9월 한정] 보름달을 보며 경단을 입에 가득 넣는 풍류 유령." },
+                month_10: { name: "호박 유령", desc: "[10월 한정] 잭오랜턴을 푹 눌러쓴 가을의 주역." },
+                month_11: { name: "군고구마 유령", desc: "[11월 한정] 김이 모락모락 나는 달콤한 군고구마를 제일 좋아함." },
+                month_12: { name: "산타 유령", desc: "[12월 한정] 빨간 고깔모자와 수염을 단 성야의 선물 요정." },
+                login_3: { name: "작심삼일 유령", desc: "[통산 3일] 염주를 차고 작심삼일을 가볍게 돌파한 기념." },
+                login_7: { name: "참잘했어요 유령", desc: "[통산 7일] 머리에 커다란 💮 마크를 얹은 1주일 개근 기념." },
+                login_14: { name: "달력 유령", desc: "[통산 14일] 일력 달력을 안고 있는 2주일 기념." },
+                login_30: { name: "개근상 유령", desc: "[통산 30일] 가슴에 금메달과 표창장을 펼친 1개월 기념." },
+                login_50: { name: "주민 유령", desc: "[통산 50일] 푹신한 슬리퍼와 머그컵을 든 상주 기념." },
+                login_100: { name: "백인력 유령", desc: "[통산 100일] 박사모와 황금빛 오라를 뿜는 100일 대선배." },
+                login_365: { name: "애니버서리 유령", desc: "[통산 365일] 머리에 촛불 케이크를 얹은 1주년 전설종." }
+            }
+        };
+
+        function getGhostLocalizedData(ghostObj) {
+            const lang = state.language || 'ja';
+            if (lang !== 'ja' && GHOST_LOCALES[lang] && GHOST_LOCALES[lang][ghostObj.id]) {
+                return GHOST_LOCALES[lang][ghostObj.id];
+            }
+            return { name: ghostObj.name, desc: ghostObj.desc };
+        }
+
+        function applyTranslations() {
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+
+            const safeSetText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            };
+            const safeSetHtml = (id, html) => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = html;
+            };
+
+            safeSetText('txt-score-title', dict.scoreTitle);
+            safeSetText('txt-density-title', dict.densityTitle);
+            safeSetText('txt-settings-btn', dict.settingsBtn);
+            safeSetText('txt-settings-title', dict.settingsTitle);
+            safeSetText('txt-lang-heading', dict.langHeading);
+            safeSetText('txt-se-title', dict.seTitle);
+            safeSetText('btn-settings-ok', dict.doneBtn);
+            safeSetText('txt-dex-btn', dict.dexBtn);
+            safeSetText('tab-upgrade', dict.tabUpgrade);
+            safeSetText('tab-shop', dict.tabShop);
+            safeSetText('tutorial-toast', dict.tutorialToast);
+            safeSetText('save-indicator', dict.saveIndicator);
+
+            safeSetText('txt-upg-speed-name', dict.upgSpeedName);
+            safeSetHtml('txt-upg-speed-desc', dict.upgSpeedDesc);
+            safeSetText('txt-upg-cap-name', dict.upgCapName);
+            safeSetHtml('txt-upg-cap-desc', dict.upgCapDesc);
+            safeSetText('txt-upg-rare-name', dict.upgRareName);
+            safeSetHtml('txt-upg-rare-desc', dict.upgRareDesc);
+            safeSetText('txt-upg-magnet-name', dict.upgMagName);
+            safeSetHtml('txt-upg-magnet-desc', dict.upgMagDesc);
+
+            safeSetText('txt-catcher-card-title', dict.catcherTitle);
+            safeSetText('txt-fever-card-title', dict.feverTitle);
+            safeSetText('txt-fever-card-time', dict.feverTime);
+
+            safeSetText('txt-banner-fast-title', dict.bannerFastTitle);
+            safeSetText('txt-banner-fast-label', dict.bannerFastLabel);
+            safeSetText('txt-banner-eco-title', dict.bannerEcoTitle);
+            safeSetText('txt-banner-eco-sub', dict.bannerEcoSub);
+
+            safeSetText('txt-tut-title', dict.tutTitle);
+            safeSetHtml('txt-tut-body', dict.tutBody);
+            safeSetText('btn-tutorial-next', dict.tutGoBtn);
+
+            safeSetText('txt-login-info-title', dict.loginInfoTitle);
+            safeSetText('txt-login-info-msg', dict.loginInfoMsg);
+
+            safeSetText('dex-tab-regular', dict.dexTabRegular);
+            safeSetText('dex-tab-special', dict.dexTabSpecial);
+            safeSetText('dex-tab-login', dict.dexTabLogin);
+
+            if (state.activeDexTab === 'regular') safeSetText('dex-title-txt', dict.dexTitleRegular);
+            else if (state.activeDexTab === 'special') safeSetText('dex-title-txt', dict.dexTitleSpecial);
+            else if (state.activeDexTab === 'login') safeSetText('dex-title-txt', dict.dexTitleLogin);
+
+            const purchaseBtn = document.getElementById('btn-purchase-execute');
+            if (purchaseBtn) {
+                const pText = dict.catcherFreeUnlockBtn || "無料でアンロック";
+                purchaseBtn.textContent = pText;
+                purchaseBtn.style.setProperty('background-color', '#0284c7', 'important');
+                purchaseBtn.style.setProperty('color', '#ffffff', 'important');
+            }
+
+            const feverExecBtn = document.getElementById('btn-fever-execute');
+            if (feverExecBtn) {
+                const fText = dict.feverStartBtn || "今すぐ発動！";
+                feverExecBtn.textContent = fText;
+                feverExecBtn.style.setProperty('background-color', '#e11d48', 'important');
+                feverExecBtn.style.setProperty('color', '#ffffff', 'important');
+            }
+
+            updateSettingsLangButtonsUI();
+            updateLoginHeaderUI();
+            applyRoombaUIState();
+            updateFeverCardUI();
+            renderDexList();
+        }
+
+        function updateSettingsLangButtonsUI() {
+            const curLang = state.language || 'ja';
+            document.querySelectorAll('.settings-lang-btn').forEach(btn => {
+                const bLang = btn.getAttribute('data-lang');
+                if (bLang === curLang) {
+                    btn.className = 'settings-lang-btn doodle-button py-1 text-[10px] font-extrabold bg-amber-300 text-stone-900 border-amber-600 shadow-sm';
+                } else {
+                    btn.className = 'settings-lang-btn doodle-button py-1 text-[10px] font-bold bg-stone-200 hover:bg-stone-300 text-stone-700';
+                }
+            });
+        }
+        function triggerMilestoneReward(milestoneObj) {
+            state.claimedMilestones[milestoneObj.id] = true;
+            initAudio();
+            playPopSound("C6");
+
+            const modal = document.getElementById('modal-login-reward');
+            const iconEl = document.getElementById('login-reward-icon');
+            const cntTxt = document.getElementById('login-days-counter-txt');
+            const titleEl = document.getElementById('login-reward-title');
+            const descEl = document.getElementById('login-reward-desc');
+
+            if (cntTxt) cntTxt.textContent = `通算 ${state.totalLoginDays}日目 達成！`;
+            if (titleEl) titleEl.textContent = `🎉「${milestoneObj.name}」が来ました！`;
+            if (iconEl) iconEl.textContent = milestoneObj.accessory === 'login_7' ? '💮' : (milestoneObj.accessory === 'login_365' ? '🎂' : '🎁');
+            
+            if (descEl) {
+                descEl.innerHTML = `
+                    <div class="font-bold text-amber-900 mb-1">【${milestoneObj.name}】</div>
+                    <p class="text-[10px] text-stone-600 mb-2">${milestoneObj.desc}</p>
+                    <p class="text-[9.5px] text-rose-700 font-extrabold">お部屋の中央に出現しました！指でなぞって吸い込もう！</p>
+                `;
+            }
+
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            const hasMilestoneAlready = ghostPool.some(g => g.active && g.isMilestone);
+            if (!hasMilestoneAlready) {
+                // お部屋が満員の場合は通常のおばけを1匹自動回収して枠を空ける
+                let emptyGhost = ghostPool.find(g => !g.active);
+                if (!emptyGhost) {
+                    const sacrifice = ghostPool.find(ghost => ghost.active && !ghost.isMilestone);
+                    if (sacrifice) {
+                        state.score += (sacrifice.type.value || 0) * (sacrifice.stackCount || 1);
+                        sacrifice.active = false;
+                        sacrifice.stackCount = 0;
+                        sacrifice.el.style.display = 'none';
+                        isUiDirty = true;
+                    }
+                }
+                
+                activateGhostFromPool(cw / 2, ch / 2, milestoneObj, 1, false);
+                state.floatingTexts.push({ x: cw / 2, y: ch / 2, text: `🎉 記念おばけ出現！`, color: '#f43f5e', alpha: 1, vy: -1.6 });
+            }
+            saveGameDataNow();
+        }
+
+        function checkDailyLoginCycle() {
+            const currentCycle = getDailyCycleDate();
+            if (state.lastLoginCycle !== currentCycle) {
+                if (state.lastLoginCycle !== "") {
+                    state.totalLoginDays = (state.totalLoginDays || 1) + 1;
+                }
+                state.lastLoginCycle = currentCycle;
+                saveGameDataNow();
+
+                const milestone = MILESTONE_GHOST_TYPES.find(g => g.reqDays === state.totalLoginDays);
+                if (milestone && !state.claimedMilestones[milestone.id]) {
+                    setTimeout(() => { triggerMilestoneReward(milestone); }, 600);
+                }
+            }
+        }
+
+        function updateLoginHeaderUI() {
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            const days = state.totalLoginDays || 1;
+            const txt = document.getElementById('header-login-days-txt');
+            if (txt) txt.textContent = dict.loginDays(days);
+        }
+
+        function openLoginInfoModal() {
+            initAudio();
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            
+            const modal = document.getElementById('modal-login-info');
+            const curDaysTxt = document.getElementById('info-current-days-txt');
+            const box = document.getElementById('info-next-milestone-box');
+
+            const days = state.totalLoginDays || 1;
+            if (curDaysTxt) curDaysTxt.textContent = dict.loginDays(days);
+
+            const next = MILESTONE_GHOST_TYPES.find(g => g.reqDays > days);
+            if (box) {
+                if (next) {
+                    const loc = getGhostLocalizedData(next);
+                    const diff = next.reqDays - days;
+                    box.innerHTML = `
+                        <div class="text-[10px] font-extrabold text-amber-900 mb-0.5">${dict.loginInfoNext}</div>
+                        <div class="text-[11px] font-black text-stone-800">【${loc.name}】</div>
+                        <div class="text-[9px] text-stone-600 mt-0.5">${dict.loginInfoDiff(diff)}</div>
+                    `;
+                } else {
+                    box.innerHTML = `
+                        <div class="text-[10px] font-extrabold text-emerald-800 mb-0.5">${dict.loginInfoComplete}</div>
+                        <div class="text-[9.5px] text-stone-700">${dict.loginInfoCompleteMsg}</div>
+                    `;
+                }
+            }
+
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        safeAddListener('btn-login-info', 'click', openLoginInfoModal);
+        safeAddListener('btn-login-info-close', 'click', () => {
+            const modal = document.getElementById('modal-login-info');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        });
+        safeAddListener('btn-login-info-ok', 'click', () => {
+            const modal = document.getElementById('modal-login-info');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        });
+        safeAddListener('btn-login-reward-claim', 'click', () => {
+            const modal = document.getElementById('modal-login-reward');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        });
+        const spriteCache = {};
+        function generateGhostSpriteData(typeObj, isUnlocked = true) {
+            const key = `${typeObj.id}_${isUnlocked}`;
+            if (spriteCache[key]) return spriteCache[key];
+            const c = document.createElement('canvas');
+            c.width = 136; c.height = 136;
+            const ctx = c.getContext('2d');
+            ctx.translate(68, 76);
+            drawGhostCharacter(ctx, typeObj, 36, isUnlocked);
+            spriteCache[key] = c.toDataURL();
+            return spriteCache[key];
+        }
+
+        function drawGhostCharacter(ctx, typeObj, r, isUnlocked = true) {
+            ctx.beginPath();
+            ctx.arc(0, -r * 0.2, r * 0.85, Math.PI, 0, false);
+            ctx.lineTo(r * 0.85, r * 0.7);
+            ctx.quadraticCurveTo(r * 0.55, r * 0.45, r * 0.28, r * 0.75);
+            ctx.quadraticCurveTo(0, r * 0.5, -r * 0.28, r * 0.75);
+            ctx.quadraticCurveTo(-r * 0.55, r * 0.45, -r * 0.85, r * 0.7);
+            ctx.closePath();
+            ctx.fillStyle = isUnlocked ? typeObj.color : '#a8a29e';
+            ctx.fill();
+            ctx.lineWidth = 3.6; ctx.strokeStyle = '#2d2d2d'; ctx.lineJoin = 'round'; ctx.stroke();
+
+            if (!isUnlocked) {
+                ctx.fillStyle = '#ffffff'; ctx.font = `800 ${Math.round(r * 0.9)}px "M PLUS Rounded 1c", sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('？', 0, 0); return;
+            }
+
+            ctx.fillStyle = typeObj.cheek;
+            ctx.beginPath(); ctx.ellipse(-r * 0.42, -r * 0.05, r * 0.18, r * 0.11, 0, 0, Math.PI * 2); ctx.ellipse(r * 0.42, -r * 0.05, r * 0.18, r * 0.11, 0, 0, Math.PI * 2); ctx.fill();
+            
+            ctx.fillStyle = '#2d2d2d';
+            if (typeObj.id === 'sleepy' || typeObj.id === 'day_sun' || typeObj.id === 'login_50') {
+                ctx.lineWidth = 2.8; ctx.beginPath(); ctx.moveTo(-r * 0.4, -r * 0.22); ctx.lineTo(-r * 0.15, -r * 0.22); ctx.moveTo(r * 0.15, -r * 0.22); ctx.lineTo(r * 0.4, -r * 0.22); ctx.stroke();
+            } else {
+                ctx.beginPath(); ctx.arc(-r * 0.28, -r * 0.22, 3.2, 0, Math.PI * 2); ctx.arc(r * 0.28, -r * 0.22, 3.2, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.beginPath(); ctx.lineWidth = 2.6; ctx.lineCap = 'round'; ctx.arc(0, -r * 0.12, r * 0.15, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+
+            const acc = typeObj.accessory;
+            if (!acc) return;
+
+            ctx.font = `800 ${Math.round(r * 0.7)}px sans-serif`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+            // 図形描画の装飾
+            if (acc === 'beret') { ctx.fillStyle = '#4a4e69'; ctx.beginPath(); ctx.ellipse(0, -r * 0.95, r * 0.7, r * 0.28, -0.15, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -r * 1.2); ctx.lineTo(-r * 0.1, -r * 1.38); ctx.stroke(); }
+            else if (acc === 'horns') { ctx.fillStyle = '#ff6b6b'; ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.85); ctx.lineTo(-r * 0.75, -r * 1.35); ctx.lineTo(-r * 0.2, -r * 1.0); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            else if (acc === 'crown') { ctx.fillStyle = '#fcc419'; ctx.beginPath(); ctx.moveTo(-r * 0.45, -r * 0.9); ctx.lineTo(-r * 0.55, -r * 1.45); ctx.lineTo(-r * 0.18, -r * 1.15); ctx.lineTo(0, -r * 1.55); ctx.lineTo(r * 0.18, -r * 1.15); ctx.lineTo(r * 0.55, -r * 1.45); ctx.lineTo(r * 0.45, -r * 0.9); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            else if (acc === 'cat' || acc === 'ghost_cat') { ctx.fillStyle = typeObj.id === 'ghost_cat' ? '#e879f9' : '#ffb3c6'; ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.85); ctx.lineTo(-r * 0.75, -r * 1.3); ctx.lineTo(-r * 0.25, -r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(r * 0.5, -r * 0.85); ctx.lineTo(r * 0.75, -r * 1.3); ctx.lineTo(r * 0.25, -r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            else if (acc === 'punk') { ctx.fillStyle = '#f43f5e'; ctx.beginPath(); ctx.moveTo(0, -r * 0.85); ctx.lineTo(-r * 0.25, -r * 1.4); ctx.lineTo(0, -r * 1.25); ctx.lineTo(r * 0.25, -r * 1.4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            else if (acc === 'wizard') { ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.moveTo(-r * 0.7, -r * 0.85); ctx.lineTo(r * 0.7, -r * 0.85); ctx.lineTo(0, -r * 1.65); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            else if (acc === 'alien') { ctx.fillStyle = '#34d399'; ctx.beginPath(); ctx.moveTo(0, -r * 0.9); ctx.lineTo(0, -r * 1.4); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -r * 1.4, r*0.15, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
+            else if (acc === 'bunny') { ctx.fillStyle = '#fbcfe8'; ctx.beginPath(); ctx.ellipse(-r*0.4, -r*1.1, r*0.2, r*0.6, -0.2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.ellipse(r*0.4, -r*1.1, r*0.2, r*0.6, 0.2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
+            
+            // Emojiやテキストによる装飾
+            else if (acc === 'zzz') { ctx.fillStyle = '#3b82f6'; ctx.font = `800 ${Math.round(r * 0.45)}px sans-serif`; ctx.fillText('Zzz', r * 0.4, -r * 0.8); }
+            else if (acc === 'angel') { ctx.fillText('👼', 0, -r * 1.1); }
+            else if (acc === 'galaxy') { ctx.fillText('🪐', 0, -r * 1.1); }
+            else if (acc === 'ninja') { ctx.fillText('🥷', 0, -r * 1.1); }
+            else if (acc === 'pirate') { ctx.fillText('🏴‍☠️', 0, -r * 1.1); }
+            else if (acc === 'doctor') { ctx.fillText('🪥', 0, -r * 1.1); }
+            else if (acc === 'chef') { ctx.fillText('🍳', 0, -r * 1.1); }
+            else if (acc === 'detective') { ctx.fillText('🔎', 0, -r * 1.1); }
+            else if (acc === 'dracula') { ctx.fillText('🧛', 0, -r * 1.1); }
+            else if (acc === 'flower') { ctx.fillText('🌸', 0, -r * 1.1); }
+            else if (acc === 'snowman') { ctx.fillText('⛄', 0, -r * 1.1); }
+            else if (acc === 'robot') { ctx.fillText('🤖', 0, -r * 1.1); }
+            else if (acc === 'samurai') { ctx.fillText('⚔️', 0, -r * 1.1); }
+            else if (acc === 'dragon') { ctx.fillText('🐉', 0, -r * 1.1); }
+            else if (acc === 'unicorn') { ctx.fillText('🦄', 0, -r * 1.1); }
+            else if (acc === 'phoenix') { ctx.fillText('🔥', 0, -r * 1.1); }
+            else if (acc === 'pharaoh') { ctx.fillText('👁️', 0, -r * 1.1); }
+            else if (acc === 'emperor') { ctx.fillText('👑', 0, -r * 1.1); }
+            else if (acc === 'cosmos') { ctx.fillText('🌌', 0, -r * 1.1); }
+            else if (acc === 'god') { ctx.fillText('✨', 0, -r * 1.1); }
+            
+            else if (acc === 'day_sun') { ctx.fillText('🛌', 0, -r * 1.1); }
+            else if (acc === 'day_mon') { ctx.fillText('☕', 0, -r * 1.1); }
+            else if (acc === 'day_tue') { ctx.fillText('🔥', 0, -r * 1.1); }
+            else if (acc === 'day_wed') { ctx.fillText('🍮', 0, -r * 1.1); }
+            else if (acc === 'day_thu') { ctx.fillText('👓', 0, -r * 0.4); }
+            else if (acc === 'day_fri') { ctx.fillText('🎉', 0, -r * 1.1); }
+            else if (acc === 'day_sat') { ctx.fillText('🧳', 0, -r * 1.1); }
+
+            else if (acc === 'month_1') { ctx.fillText('🍊', 0, -r * 1.1); }
+            else if (acc === 'month_2') { ctx.fillText('🍫', 0, -r * 1.1); }
+            else if (acc === 'month_3') { ctx.fillText('🍡', 0, -r * 1.1); }
+            else if (acc === 'month_4') { ctx.fillText('🌷', 0, -r * 1.1); }
+            else if (acc === 'month_5') { ctx.fillText('🎏', 0, -r * 1.1); }
+            else if (acc === 'month_6') { ctx.fillText('☂️', 0, -r * 1.1); }
+            else if (acc === 'month_7') { ctx.fillText('🎋', 0, -r * 1.1); }
+            else if (acc === 'month_8') { ctx.fillText('🍉', 0, -r * 1.1); }
+            else if (acc === 'month_9') { ctx.fillText('🎑', 0, -r * 1.1); }
+            else if (acc === 'month_10') { ctx.fillText('🎃', 0, -r * 1.1); }
+            else if (acc === 'month_11') { ctx.fillText('🍠', 0, -r * 1.1); }
+            else if (acc === 'month_12') { ctx.fillText('🎅', 0, -r * 1.1); }
+            
+            else if (acc === 'login_3') { ctx.fillText('📿', 0, -r * 1.1); }
+            else if (acc === 'login_7') { ctx.fillText('💮', 0, -r * 1.1); }
+            else if (acc === 'login_14') { ctx.fillText('📅', 0, -r * 1.1); }
+            else if (acc === 'login_30') { ctx.fillText('🏅', 0, -r * 1.1); }
+            else if (acc === 'login_50') { ctx.fillText('🧦', 0, -r * 1.1); }
+            else if (acc === 'login_100') { ctx.fillText('🎓', 0, -r * 1.1); }
+            else if (acc === 'login_365') { ctx.fillText('🎂', 0, -r * 1.1); }
+        }
+        const ghostPool = [];
+        function initGhostDOMPool() {
+            const container = document.getElementById('ghost-playground');
+            if (!container) return;
+            container.innerHTML = '';
+            ghostPool.length = 0;
+            for (let i = 0; i < MAX_POOL_SIZE; i++) {
+                const el = document.createElement('div'); el.className = 'pooled-ghost';
+                const img = document.createElement('img'); img.className = 'ghost-img'; el.appendChild(img);
+                const badge = document.createElement('div'); badge.className = 'stack-badge'; el.appendChild(badge);
+                const babyBadge = document.createElement('div'); babyBadge.className = 'baby-badge hidden'; babyBadge.textContent = 'こおばけ'; el.appendChild(babyBadge);
+                container.appendChild(el);
+                ghostPool.push({ 
+                    id: i, el, img, badge, babyBadge, 
+                    active: false, type: GHOST_TYPES[0], stackCount: 1, 
+                    x: 0, y: 0, vx: 0, vy: 0, radius: 24, scale: 1, 
+                    isBaby: false, 
+                    isMilestone: false,
+                    wobbleOffset: Math.random() * Math.PI * 2, 
+                    wobbleSpeed: 0.05 + Math.random() * 0.04, 
+                    facing: 1 
+                });
+            }
+        }
+
+        function getActiveGhosts() { return ghostPool.filter(g => g.active); }
+        function getTotalGhostsInRoom() { return ghostPool.reduce((sum, g) => sum + (g.active ? g.stackCount : 0), 0); }
+
+        function getActiveCalendarGhosts() {
+            const curDay = getCurrentDay();
+            const curMonth = getCurrentMonth();
+            const todayGhost = WEEKDAY_GHOST_TYPES.find(g => g.targetDay === curDay);
+            const thisMonthGhost = MONTH_GHOST_TYPES.find(g => g.targetMonth === curMonth);
+            return { todayGhost, thisMonthGhost };
+        }
+
+        function pickGhostType() {
+            const unlockedList = REGULAR_GHOST_TYPES.filter(t => state.unlockedDex[t.id]);
+            const { todayGhost, thisMonthGhost } = getActiveCalendarGhosts();
+            
+            const candidateList = [...unlockedList];
+            if (todayGhost) candidateList.push(todayGhost);
+            if (thisMonthGhost) candidateList.push(thisMonthGhost);
+
+            const feverRareMultiplier = state.feverTimeLeft > 0 ? 12.0 : 0;
+            const rareBoost = (Math.min(MAX_UPGRADE_LEVEL, state.lvlRare) - 1) * 0.32 + feverRareMultiplier;
+            let totalWeight = 0;
+            const adjusted = candidateList.map(t => {
+                const w = (t.id === 'normal') ? t.weight : t.weight * (1 + rareBoost);
+                totalWeight += w; return { type: t, weight: w };
+            });
+            let rand = Math.random() * totalWeight;
+            for (const item of adjusted) { if (rand < item.weight) return item.type; rand -= item.weight; }
+            return REGULAR_GHOST_TYPES[0];
+        }
+
+        function activateGhostFromPool(x, y, typeObj, initialStack = 1, isBaby = false, forceVx = 0, forceVy = 0) {
+            const g = ghostPool.find(g => !g.active);
+            if (!g) return null;
+            const isMilestone = typeObj && typeObj.reqDays !== undefined;
+            g.isMilestone = isMilestone;
+            g.isBaby = isBaby;
+            
+            g.x = x ?? (isMilestone ? (cw / 2) : (40 + Math.random() * Math.max(20, cw - 80)));
+            g.y = y ?? (isMilestone ? (ch / 2) : (40 + Math.random() * Math.max(20, ch - 80)));
+            g.vx = isMilestone ? 0 : (forceVx !== 0 ? forceVx : (Math.random() - 0.5) * 1.5);
+            g.vy = isMilestone ? 0 : (forceVy !== 0 ? forceVy : (Math.random() - 0.5) * 1.5);
+            g.type = typeObj; 
+            g.stackCount = initialStack; 
+            g.scale = isBaby ? 0.65 : (isMilestone ? 1.0 : 0.2);
+            g.radius = isBaby ? 16 : (isMilestone ? 65 : 24);
+            g.active = true; 
+            g.facing = 1;
+            g.img.src = generateGhostSpriteData(typeObj, true); 
+            g.el.style.display = 'block';
+            g.el.style.zIndex = isMilestone ? '25' : '10';
+
+            if (isBaby) {
+                g.babyBadge.classList.remove('hidden');
+            } else {
+                g.babyBadge.classList.add('hidden');
+            }
+
+            updateGhostStackBadge(g); 
+            return g;
+        }
+
+        function updateGhostStackBadge(g) {
+            if (g.stackCount > 1) {
+                g.badge.textContent = `×${formatAstronomicalNumber(g.stackCount)}`;
+                g.badge.style.display = 'block';
+            } else { g.badge.style.display = 'none'; }
+        }
+
+        function bulkSpawnGhosts(count) {
+            if (count <= 0) return;
+            const currentTotal = getTotalGhostsInRoom();
+            const maxCap = getMaxCapacity();
+            let remainingToAdd = Math.min(count, Math.max(0, maxCap - currentTotal));
+            if (remainingToAdd <= 0) return;
+
+            let activeCount = getActiveGhosts().length;
+            while (remainingToAdd > 0 && activeCount < MAX_POOL_SIZE) {
+                const targetType = pickGhostType();
+                activateGhostFromPool(null, null, targetType, 1, false);
+                remainingToAdd--;
+                activeCount++;
+            }
+
+            if (remainingToAdd > 0) {
+                const active = getActiveGhosts();
+                if (active.length > 0) {
+                    const targetType = pickGhostType();
+                    let match = active.find(g => g.type.id === targetType.id && !g.isMilestone);
+                    if (!match) match = active.find(g => !g.isMilestone) || active[0];
+                    if (match) {
+                        match.stackCount += remainingToAdd;
+                        updateGhostStackBadge(match);
+                    }
+                }
+            }
+        }
+
+        function spawnInitialGhosts() {
+            for (let i = 0; i < 6; i++) activateGhostFromPool(null, null, pickGhostType(), 1, false);
+        }
+        function collectGhostInstance(g, multiplier = 1.0) {
+            if (!g || !g.active) return;
+            
+            const baseVal = g.type.value;
+            const gainPerGhost = Math.max(1, Math.floor(baseVal * multiplier));
+            const totalGain = gainPerGhost * (g.stackCount || 1);
+            
+            state.score += totalGain;
+            state.ghostCounts[g.type.id] = (state.ghostCounts[g.type.id] || 0) + (g.stackCount || 1);
+
+            if (g.type.targetDay !== undefined || g.type.targetMonth !== undefined || g.type.reqDays !== undefined) {
+                if (!state.unlockedDex[g.type.id]) {
+                    state.unlockedDex[g.type.id] = true;
+                    const lang = state.language || 'ja';
+                    const dict = I18N[lang] || I18N.ja;
+                    const locName = getGhostLocalizedData(g.type).name;
+                    showGameToast(dict.dexRegisteredMsg(locName));
+                    saveGameDataNow();
+                }
+            }
+
+            if (g.type.id === 'login_365') {
+                state.feverTimeLeft = Math.max(state.feverTimeLeft, 20);
+                showGameToast("🎂 1周年記念フィーバー20秒が発動！");
+            }
+
+            playPopSound(g.type.pitch || "G5");
+
+            // パーティクル＆浮遊テキストの過剰生成を防止
+            if (state.particles.length < 40) {
+                for (let i = 0; i < 2; i++) {
+                    state.particles.push({
+                        x: g.x, y: g.y,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: (Math.random() - 0.5) * 4,
+                        r: 2.5 + Math.random() * 2,
+                        alpha: 1
+                    });
+                }
+            }
+
+            if (state.floatingTexts.length < 25) {
+                state.floatingTexts.push({
+                    x: g.x, y: g.y,
+                    text: `+${formatAstronomicalNumber(totalGain)}`,
+                    color: g.isBaby ? '#f59e0b' : (g.type.reqDays ? '#ef4444' : '#d97706'),
+                    alpha: 1, vy: -1.2
+                });
+            }
+
+            if (state.feverTimeLeft > 0 && !g.isBaby) {
+                for (let b = 0; b < 2; b++) {
+                    const angle = (b === 0 ? -1 : 1) * (0.6 + Math.random() * 0.4);
+                    const speed = 2.2 + Math.random() * 1.5;
+                    const baby = activateGhostFromPool(
+                        g.x, g.y, g.type, 1, true,
+                        Math.cos(angle) * speed, Math.sin(angle) * speed
+                    );
+                    if (!baby) {
+                        state.score += Math.max(1, Math.floor(baseVal * 0.5));
+                    }
+                }
+            }
+
+            g.active = false;
+            g.stackCount = 0;
+            g.isBaby = false;
+            g.isMilestone = false;
+            g.el.style.zIndex = '10';
+            g.el.style.display = 'none';
+
+            isUiDirty = true;
+        }
+
+        function collectGhostsAt(x, y, radius, multiplier = 1.0) {
+            const active = getActiveGhosts();
+            for (let i = active.length - 1; i >= 0; i--) {
+                const g = active[i];
+                if (Math.hypot(g.x - x, g.y - y) <= radius + g.radius) {
+                    collectGhostInstance(g, multiplier);
+                }
+            }
+        }
+
+        function canUnlockGhost(typeObj) {
+            if (state.unlockedDex[typeObj.id]) return false;
+            if (!typeObj.requireType || !typeObj.unlockCost) return false;
+            if (!state.unlockedDex[typeObj.requireType]) return false;
+            return (state.ghostCounts[typeObj.requireType] || 0) >= typeObj.unlockCost;
+        }
+
+        function updateDexBadge() {
+            const badge = document.getElementById('dex-notify-badge');
+            if (!badge) return;
+            const hasReady = REGULAR_GHOST_TYPES.some(t => canUnlockGhost(t));
+            if (hasReady) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+
+        let lastNotifiedGhostId = null;
+        function checkDexUnlocks() {
+            updateDexBadge();
+            const firstReady = REGULAR_GHOST_TYPES.find(t => canUnlockGhost(t));
+            if (firstReady && lastNotifiedGhostId !== firstReady.id) {
+                lastNotifiedGhostId = firstReady.id;
+                const lang = state.language || 'ja';
+                const dict = I18N[lang] || I18N.ja;
+                const locName = getGhostLocalizedData(firstReady).name;
+                showGameToast(dict.dexReadyMsg(locName));
+            }
+        }
+
+        function unlockGhostManually(ghostId) {
+            const target = REGULAR_GHOST_TYPES.find(t => t.id === ghostId);
+            if (!target || !canUnlockGhost(target)) return;
+            initAudio();
+            state.unlockedDex[target.id] = true;
+            playPopSound("C6");
+            
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            const locName = getGhostLocalizedData(target).name;
+            showGameToast(dict.dexUnlockedMsg(locName));
+            
+            state.floatingTexts.push({ x: cw / 2, y: ch / 2, text: `🎉 ${locName} Unlock!`, color: '#ca8a04', alpha: 1, vy: -1.4 });
+            renderDexList();
+            updateDexBadge();
+            updateUI();
+            saveGameDataNow();
+        }
+
+        function getMaxCapacity() {
+            const lvl = Math.min(MAX_UPGRADE_LEVEL, Math.max(1, state.lvlCap));
+            return Math.floor(100 * Math.pow(10, 10 * (lvl - 1) / (MAX_UPGRADE_LEVEL - 1)));
+        }
+
+        function getSpawnIntervalMs() {
+            if (state.feverTimeLeft > 0) return 90;
+            const lvl = Math.min(MAX_UPGRADE_LEVEL, Math.max(1, state.lvlSpeed));
+            return Math.max(30, Math.floor(1500 * Math.pow(0.0013, (lvl - 1) / (MAX_UPGRADE_LEVEL - 1))));
+        }
+
+        function getSpawnBatchSize() {
+            if (state.feverTimeLeft > 0) return Math.max(2, Math.floor(getSpawnBatchSizeBase() * 1.5));
+            return getSpawnBatchSizeBase();
+        }
+
+        function getSpawnBatchSizeBase() {
+            const lvl = Math.min(MAX_UPGRADE_LEVEL, Math.max(1, state.lvlSpeed));
+            if (lvl <= 10) return 1;
+            if (lvl <= 25) return 1 + Math.floor((lvl - 10) * 0.2);
+            if (lvl <= 40) return 4 + Math.floor((lvl - 25) * 0.8);
+            return Math.max(1, Math.floor(Math.pow(10, 6 * (lvl - 1) / (MAX_UPGRADE_LEVEL - 1))));
+        }
+
+        function getUpgradeCost(type) {
+            const prop = `lvl${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            const lvl = state[prop];
+            if (lvl >= MAX_UPGRADE_LEVEL) return Infinity;
+            const base = type === 'speed' ? 15 : (type === 'cap' ? 30 : (type === 'rare' ? 50 : 40));
+            return Math.floor(base * Math.pow(1.67735, lvl - 1));
+        }
+
+        function getSwipeRadius() {
+            const lvl = Math.min(MAX_UPGRADE_LEVEL, Math.max(1, state.lvlMagnet));
+            const base = 35 + (lvl - 1) * 1.5;
+            return state.feverTimeLeft > 0 ? base * 1.5 : base;
+        }
+
+        function checkDailyBatteryReset() {
+            if (!state.hasRoomba) return;
+            const currentCycle = getDailyCycleDate();
+            if (state.lastBatteryResetCycle !== currentCycle) {
+                state.lastBatteryResetCycle = currentCycle;
+                state.batteryHighPowerLeft = 7200;
+                saveGameDataNow();
+            }
+        }
+        let audioReady = false, bgmGain = null, seGain = null, popSynth = null;
+        let bgmChordsSynth = null, bgmMelodySynth = null, bgmBassSynth = null, bgmStarSynth = null, bgmStarBass = null;
+        let bgmCurrentStep = 0, feverStep = 0, bgmScheduledEventId = null;
+
+        function applyAudioVolumes() {
+            if (!audioReady) return;
+            try {
+                if (bgmGain) {
+                    const bgmGainVal = state.bgmEnabled ? (state.bgmVolume / 100) : 0;
+                    bgmGain.gain.rampTo(bgmGainVal, 0.05);
+                }
+                if (seGain) {
+                    const seGainVal = state.seEnabled ? (state.seVolume / 100) : 0;
+                    seGain.gain.rampTo(seGainVal, 0.05);
+                }
+                if (window.Tone && Tone.Transport) {
+                    if (state.bgmEnabled && state.bgmVolume > 0) {
+                        if (Tone.context.state !== 'running') Tone.context.resume();
+                        Tone.Transport.start();
+                    } else {
+                        Tone.Transport.pause();
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function updateSettingsModalUI() {
+            const toggleBgm = document.getElementById('toggle-bgm');
+            const toggleSe = document.getElementById('toggle-se');
+            const sliderBgm = document.getElementById('slider-bgm');
+            const sliderSe = document.getElementById('slider-se');
+            const txtBgm = document.getElementById('txt-bgm-vol');
+            const txtSe = document.getElementById('txt-se-vol');
+
+            if (toggleBgm) {
+                toggleBgm.textContent = state.bgmEnabled ? "ON" : "OFF";
+                toggleBgm.className = `doodle-button px-2.5 py-0.5 text-[9px] font-extrabold ${state.bgmEnabled ? 'bg-lime-200 text-stone-800' : 'bg-stone-300 text-stone-500'}`;
+            }
+            if (toggleSe) {
+                toggleSe.textContent = state.seEnabled ? "ON" : "OFF";
+                toggleSe.className = `doodle-button px-2.5 py-0.5 text-[9px] font-extrabold ${state.seEnabled ? 'bg-sky-200 text-stone-800' : 'bg-stone-300 text-stone-500'}`;
+            }
+            if (sliderBgm) sliderBgm.value = state.bgmVolume;
+            if (sliderSe) sliderSe.value = state.seVolume;
+            if (txtBgm) txtBgm.textContent = `${state.bgmVolume}%`;
+            if (txtSe) txtSe.textContent = `${state.seVolume}%`;
+
+            updateSettingsLangButtonsUI();
+        }
+
+        const BGM_CHORDS = [
+            { chord: ["E4", "G4", "B4"], bass: "C3" }, { chord: ["C4", "E4", "G4"], bass: "A2" },
+            { chord: ["F4", "A4", "C5"], bass: "D3" }, { chord: ["F4", "G4", "B4"], bass: "G2" }
+        ];
+
+        const FEVER_NOTES = [
+            "C5", "E5", "G5", "C6", "E5", "G5", "C6", "E6",
+            "B4", "D5", "G5", "B5", "D5", "G5", "B5", "D6",
+            "A4", "C5", "E5", "A5", "C5", "E5", "A5", "C6",
+            "F4", "A4", "C5", "F5", "G4", "B4", "D5", "G5"
+        ];
+        const FEVER_BASS = [
+            "C3", "C3", "C4", "C3", "G2", "G2", "G3", "G2",
+            "A2", "A2", "A3", "A2", "F2", "F2", "G2", "G2"
+        ];
+
+        async function initAudio() {
+            if (audioReady) return;
+            try {
+                if (window.Tone) {
+                    await Tone.start();
+
+                    bgmGain = new Tone.Gain(state.bgmEnabled ? (state.bgmVolume / 100) : 0).toDestination();
+                    seGain = new Tone.Gain(state.seEnabled ? (state.seVolume / 100) : 0).toDestination();
+
+                    popSynth = new Tone.PolySynth(Tone.MembraneSynth, { 
+                        pitchDecay: 0.04, octaves: 2.2, oscillator: { type: "sine" }, 
+                        envelope: { attack: 0.002, decay: 0.11, sustain: 0, release: 0.08 } 
+                    }).connect(seGain);
+                    popSynth.volume.value = -7;
+
+                    bgmChordsSynth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.12, decay: 0.9, sustain: 0.35, release: 1.2 }
+                    }).connect(bgmGain);
+                    bgmChordsSynth.volume.value = -21;
+
+                    bgmBassSynth = new Tone.Synth({
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.03, decay: 0.5, sustain: 0.3, release: 0.7 }
+                    }).connect(bgmGain);
+                    bgmBassSynth.volume.value = -16;
+
+                    bgmStarSynth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "square" },
+                        envelope: { attack: 0.01, decay: 0.12, sustain: 0.25, release: 0.2 }
+                    }).connect(bgmGain);
+                    bgmStarSynth.volume.value = -19;
+
+                    bgmStarBass = new Tone.MonoSynth({
+                        oscillator: { type: "sawtooth" },
+                        filter: { Q: 2, type: "lowpass", rolloff: -24 },
+                        envelope: { attack: 0.01, decay: 0.18, sustain: 0.3, release: 0.25 },
+                        filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.4, release: 0.3, baseFrequency: 140, octaves: 2.6 }
+                    }).connect(bgmGain);
+                    bgmStarBass.volume.value = -17;
+
+                    Tone.Transport.bpm.value = 104;
+                    lastAppliedBpm = 104;
+
+                    if (bgmScheduledEventId === null) {
+                        bgmScheduledEventId = Tone.Transport.scheduleRepeat((time) => {
+                            if (!state.bgmEnabled || state.bgmVolume <= 0) return;
+
+                            if (state.feverTimeLeft > 0) {
+                                const feverNote = FEVER_NOTES[feverStep % FEVER_NOTES.length];
+                                bgmStarSynth.triggerAttackRelease(feverNote, "16n", time, 0.45);
+
+                                if (feverStep % 2 === 0) {
+                                    const bassIdx = Math.floor(feverStep / 2) % FEVER_BASS.length;
+                                    bgmStarBass.triggerAttackRelease(FEVER_BASS[bassIdx], "16n", time, 0.55);
+                                }
+                                feverStep = (feverStep + 1) % FEVER_NOTES.length;
+                            } else {
+                                if (bgmCurrentStep % 4 === 0) {
+                                    const barIndex = Math.floor(bgmCurrentStep / 16) % BGM_CHORDS.length;
+                                    const beatInBar = Math.floor(bgmCurrentStep / 4) % 4;
+                                    if (beatInBar === 0) {
+                                        const cur = BGM_CHORDS[barIndex];
+                                        bgmChordsSynth.triggerAttackRelease(cur.chord, "2n", time, 0.4);
+                                        bgmBassSynth.triggerAttackRelease(cur.bass, "4n", time, 0.5);
+                                    }
+                                }
+                                bgmCurrentStep = (bgmCurrentStep + 1) % 64;
+                            }
+                        }, "16n");
+                    }
+
+                    if (state.bgmEnabled && state.bgmVolume > 0) {
+                        Tone.Transport.start();
+                    }
+                }
+                audioReady = true;
+                updateSettingsModalUI();
+            } catch (e) {
+                console.warn("[Audio] Tone.js not ready:", e);
+            }
+        }
+
+        function playPopSound(pitch = "G5") { 
+            const now = performance.now();
+            if (now - lastPopSoundTime < 35) return;
+            lastPopSoundTime = now;
+
+            if (audioReady && state.seEnabled && state.seVolume > 0 && popSynth) { 
+                try { popSynth.triggerAttackRelease(pitch, "32n"); } catch (e) {} 
+            } 
+        }
+
+        function getAverageGhostValue() {
+            const unlockedList = REGULAR_GHOST_TYPES.filter(t => state.unlockedDex[t.id]);
+            const rareBoost = (Math.min(MAX_UPGRADE_LEVEL, state.lvlRare) - 1) * 0.32;
+            let totalWeight = 0;
+            let totalExpectedValue = 0;
+
+            unlockedList.forEach(t => {
+                const w = (t.id === 'normal') ? t.weight : t.weight * (1 + rareBoost);
+                totalWeight += w;
+                totalExpectedValue += (t.value * w);
+            });
+            
+            return totalWeight > 0 ? (totalExpectedValue / totalWeight) : 1;
+        }
+
+        function calculateOfflineRewards(seconds) {
+            checkDailyBatteryReset();
+            checkDailyLoginCycle();
+            const interval = getSpawnIntervalMs() / 1000;
+            const batchSize = getSpawnBatchSizeBase();
+            const capacity = getMaxCapacity();
+            const isCatcherActive = (state.hasRoomba && state.roombaActive);
+
+            const modal = document.getElementById("modal-offline");
+            const desc = document.getElementById("offline-desc");
+            
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+
+            if (isCatcherActive) {
+                const efficiency = 0.85;
+                let fastSeconds = Math.min(seconds, state.batteryHighPowerLeft);
+                let ecoSeconds = Math.max(0, seconds - fastSeconds);
+                state.batteryHighPowerLeft = Math.max(0, state.batteryHighPowerLeft - fastSeconds);
+
+                const fastHarvest = Math.floor((fastSeconds / interval) * batchSize * efficiency);
+                const ecoHarvest = Math.floor((ecoSeconds / interval) * batchSize * efficiency);
+
+                const avgValue = getAverageGhostValue();
+
+                // 強力バッテリー中は平均価値の10%、エコモード中は1%として計算（減衰率を元に戻す）
+                const fastScore = Math.floor(fastHarvest * avgValue * 0.10);
+                const ecoScore = Math.floor(ecoHarvest * avgValue * 0.01);
+
+                const totalHarvest = fastHarvest + ecoHarvest;
+                const totalScore = fastScore + ecoScore;
+                state.score += totalScore;
+
+                document.getElementById('offline-icon').textContent = "🧹✨";
+                document.getElementById('offline-title').textContent = dict.offlineTitle;
+
+                desc.innerHTML = `
+                    <p class="font-bold mb-2 border-b border-stone-300 pb-1 text-sky-800">${dict.catcherTitle}</p>
+                    <div class="flex justify-between text-[10px] mb-1">
+                        <span>${dict.offlineTime}</span> <b>${Math.floor(seconds / 60)} m</b>
+                    </div>
+                    <div class="flex justify-between text-[10px] mb-1 text-sky-700">
+                        <span>${dict.offlineCaught}</span> <b>${formatAstronomicalNumber(totalHarvest)}</b>
+                    </div>
+                    <div class="text-center text-sm font-extrabold text-amber-600 mt-2">
+                        +${formatAstronomicalNumber(totalScore)}
+                    </div>
+                `;
+            } else {
+                const currentGhosts = getTotalGhostsInRoom();
+                const roomSpace = Math.max(0, capacity - currentGhosts);
+                const spawnedGhosts = Math.min(roomSpace, Math.floor((seconds / interval) * batchSize));
+
+                document.getElementById('offline-icon').textContent = "👻✨";
+                document.getElementById('offline-title').textContent = dict.offlineTitle;
+                desc.innerHTML = `
+                    <div class="flex justify-between text-[10px] mb-1"><span>${dict.offlineTime}</span> <b>${Math.floor(seconds/60)} m</b></div>
+                    <div class="flex justify-between text-[10px] mb-2 text-stone-700">
+                        <span>${dict.offlineAccumulated}</span> <b>+${formatAstronomicalNumber(spawnedGhosts)}</b>
+                    </div>
+                    <div class="bg-amber-100 border border-amber-300 rounded p-1.5 text-[9px] text-amber-900">
+                        ${dict.offlineHint}
+                    </div>
+                `;
+                bulkSpawnGhosts(spawnedGhosts);
+            }
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            saveGameDataNow();
+        }
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let cw = 0, ch = 0;
+        let pointerPos = { x: -999, y: -999 };
+        let isPointerDown = false;
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+            cw = container.clientWidth;
+            ch = container.clientHeight;
+            canvas.width = cw;
+            canvas.height = ch;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function dismissTutorialToast() {
+            const t = document.getElementById('tutorial-toast');
+            if (t) t.style.opacity = '0';
+        }
+
+        function handlePointerMove(cx, cy) { 
+            dismissTutorialToast();
+            const rect = canvas.getBoundingClientRect(); 
+            pointerPos.x = cx - rect.left; 
+            pointerPos.y = cy - rect.top; 
+            collectGhostsAt(pointerPos.x, pointerPos.y, getSwipeRadius(), 1.0); 
+        }
+        
+        const playContainer = document.getElementById('canvas-container');
+        playContainer.addEventListener('mousedown', (e) => { initAudio(); isPointerDown = true; handlePointerMove(e.clientX, e.clientY); });
+        window.addEventListener('mousemove', (e) => { if (!isPointerDown) return; handlePointerMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', () => { isPointerDown = false; pointerPos = { x: -999, y: -999 }; });
+        playContainer.addEventListener('touchstart', (e) => { initAudio(); isPointerDown = true; handlePointerMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+        playContainer.addEventListener('touchmove', (e) => { if (!isPointerDown) return; handlePointerMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+        playContainer.addEventListener('touchend', () => { isPointerDown = false; pointerPos = { x: -999, y: -999 }; });
+        function saveGameDataNow() {
+            if (window.isResetting) return;
+            try {
+                const nowTime = Date.now();
+                state.lastSavedTime = nowTime;
+                lastAutoSaveTime = nowTime;
+                const snapshot = {
+                    score: state.score,
+                    ghostCounts: state.ghostCounts,
+                    unlockedDex: state.unlockedDex,
+                    lvlSpeed: state.lvlSpeed,
+                    lvlCap: state.lvlCap,
+                    lvlRare: state.lvlRare,
+                    lvlMagnet: state.lvlMagnet,
+                    feverTimeLeft: state.feverTimeLeft,
+                    feverAvailableTimestamp: state.feverAvailableTimestamp,
+                    hasRoomba: state.hasRoomba,
+                    roombaActive: state.roombaActive,
+                    hasGoldenRoomba: state.hasGoldenRoomba,
+                    goldenRoombaActive: state.goldenRoombaActive,
+                    chargedTimeLeft: state.chargedTimeLeft,
+                    batteryHighPowerLeft: state.batteryHighPowerLeft,
+                    lastBatteryResetCycle: state.lastBatteryResetCycle,
+                    lvlRoombaSpeed: state.lvlRoombaSpeed,
+                    lvlRoombaBattery: state.lvlRoombaBattery,
+                    lastSavedTime: state.lastSavedTime,
+                    hasCompletedTutorial: state.hasCompletedTutorial,
+                    bgmEnabled: state.bgmEnabled,
+                    seEnabled: state.seEnabled,
+                    bgmVolume: state.bgmVolume,
+                    seVolume: state.seVolume,
+                    language: state.language,
+                    hasSelectedLanguage: state.hasSelectedLanguage,
+                    totalLoginDays: state.totalLoginDays,
+                    lastLoginCycle: state.lastLoginCycle,
+                    claimedMilestones: state.claimedMilestones
+                };
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(snapshot));
+                const indicator = document.getElementById('save-indicator');
+                if (indicator) { 
+                    indicator.style.opacity = '1'; 
+                    setTimeout(() => { indicator.style.opacity = '0'; }, 600); 
+                }
+            } catch (e) {
+                console.error("[Storage Save Error]", e);
+            }
+        }
+
+        // スマホ画面切り替え・バックグラウンド移行時のセーブ
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                saveGameDataNow();
+            }
+        });
+
+        // ページ終了・離脱時の完全フック（iOS Safari / Android Chrome / PC共通）
+        window.addEventListener('pagehide', saveGameDataNow);
+        window.addEventListener('beforeunload', saveGameDataNow);
+
+        function loadGameData() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    Object.assign(state, parsed);
+                }
+            } catch (e) {
+                console.warn("[Storage Load Warning]", e);
+            }
+
+            checkDailyBatteryReset();
+            checkDailyLoginCycle();
+            applyRoombaUIState();
+
+            const modalLang = document.getElementById('modal-language');
+            if (modalLang) {
+                if (state.hasSelectedLanguage) {
+                    modalLang.classList.add('hidden');
+                    modalLang.classList.remove('flex');
+                } else {
+                    modalLang.classList.remove('hidden');
+                    modalLang.classList.add('flex');
+                }
+            }
+            applyTranslations();
+
+            if (state.lastSavedTime) {
+                const elapsedMs = Date.now() - state.lastSavedTime;
+                if (elapsedMs > 15000) calculateOfflineRewards(elapsedMs / 1000);
+            }
+
+            if (getActiveGhosts().length === 0) spawnInitialGhosts();
+            
+            const tut = document.getElementById('modal-tutorial');
+            if (tut) {
+                if (state.hasCompletedTutorial || !state.hasSelectedLanguage) tut.classList.add('hidden');
+                else tut.classList.remove('hidden');
+            }
+            updateSettingsModalUI();
+            updateLoginHeaderUI();
+            updateUI();
+        }
+
+        function applyRoombaUIState() {
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+
+            const badge = document.getElementById('roomba-badge');
+            const btnBuy = document.getElementById('btn-buy-roomba');
+            const fastBanner = document.getElementById('fast-battery-banner');
+            const ecoBanner = document.getElementById('eco-battery-banner');
+
+            if (state.hasRoomba) {
+                if (badge) {
+                    badge.textContent = state.roombaActive ? dict.catcherActive : dict.catcherPausedBadge;
+                    badge.className = `text-[8px] font-bold px-1 rounded text-white ${state.roombaActive ? 'bg-emerald-600' : 'bg-stone-500'}`;
+                }
+                if (btnBuy) {
+                    btnBuy.textContent = state.roombaActive ? dict.catcherPause : dict.catcherResume;
+                    btnBuy.className = `w-full font-extrabold text-[9.5px] rounded py-1 transition text-white shadow-sm border border-stone-800 ${state.roombaActive ? 'bg-stone-600 hover:bg-stone-700' : 'bg-emerald-600 hover:bg-emerald-700'}`;
+                }
+
+                if (state.roombaActive) {
+                    if (fastBanner) fastBanner.classList.remove('hidden');
+                    if (ecoBanner) ecoBanner.classList.add('hidden');
+                    const timerTxt = document.getElementById('fast-battery-timer-txt');
+                    if (timerTxt) timerTxt.textContent = formatHoursMinutesSeconds(state.batteryHighPowerLeft);
+                } else {
+                    if (fastBanner) fastBanner.classList.add('hidden');
+                    if (ecoBanner) ecoBanner.classList.remove('hidden');
+                }
+            } else {
+                if (badge) {
+                    badge.textContent = dict.catcherLocked || "未解放"; 
+                    badge.className = "text-[8px] font-bold bg-sky-600 text-white px-1 rounded";
+                }
+                if (btnBuy) {
+                    btnBuy.textContent = dict.catcherFreeUnlockBtn || "【試験版】無料でアンロック";
+                    btnBuy.className = "w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9.5px] rounded py-1 shadow-sm border border-stone-800";
+                }
+                if (fastBanner) fastBanner.classList.add('hidden');
+                if (ecoBanner) ecoBanner.classList.add('hidden');
+            }
+        }
+
+        function updateUI() {
+            const scoreEl = document.getElementById('score-display');
+            if (scoreEl) scoreEl.textContent = formatAstronomicalNumber(state.score);
+            const actualTotalCount = getTotalGhostsInRoom();
+            const cap = getMaxCapacity();
+            const countEl = document.getElementById('count-display');
+            if (countEl) countEl.textContent = `${formatAstronomicalNumber(actualTotalCount)} / ${formatAstronomicalNumber(cap)}`;
+            const capBar = document.getElementById('capacity-bar');
+            if (capBar) capBar.style.width = `${Math.min(100, (actualTotalCount / cap) * 100)}%`;
+
+            updateDexBadge();
+
+            ['speed', 'cap', 'rare', 'magnet'].forEach(t => {
+                const lvl = state[`lvl${t.charAt(0).toUpperCase() + t.slice(1)}`];
+                const isMax = lvl >= MAX_UPGRADE_LEVEL;
+                const cost = getUpgradeCost(t);
+                const lvlEl = document.getElementById(`lvl-${t}`);
+                if (lvlEl) lvlEl.textContent = isMax ? 'Lv.MAX' : `Lv.${lvl}`;
+                const costEl = document.getElementById(`cost-${t}`);
+                if (costEl) costEl.textContent = isMax ? 'MAX' : formatAstronomicalNumber(cost);
+                const btnEl = document.getElementById(`upg-${t}`);
+                if (btnEl) btnEl.disabled = isMax || state.score < cost;
+            });
+        }
+        safeAddListener('tab-upgrade', 'click', () => {
+            document.getElementById('tab-upgrade').className = "flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition";
+            document.getElementById('tab-shop').className = "flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative";
+            document.getElementById('panel-upgrade').classList.remove('hidden'); 
+            document.getElementById('panel-shop').classList.add('hidden'); 
+            document.getElementById('panel-shop').classList.remove('grid');
+        });
+
+        safeAddListener('tab-shop', 'click', () => {
+            document.getElementById('tab-shop').className = "flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition relative";
+            document.getElementById('tab-upgrade').className = "flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition";
+            document.getElementById('panel-shop').classList.remove('hidden'); 
+            document.getElementById('panel-shop').classList.add('grid'); 
+            document.getElementById('panel-upgrade').classList.add('hidden');
+        });
+
+        ['speed', 'cap', 'rare', 'magnet'].forEach((type) => {
+            safeAddListener(`upg-${type}`, 'click', () => {
+                initAudio();
+                const cost = getUpgradeCost(type);
+                if (state.score >= cost && cost !== Infinity) {
+                    state.score -= cost;
+                    const prop = `lvl${type.charAt(0).toUpperCase() + type.slice(1)}`;
+                    if (state[prop] < MAX_UPGRADE_LEVEL) state[prop]++;
+                    playPopSound("A5"); updateUI(); saveGameDataNow();
+                }
+            });
+        });
+
+        function openRoombaUnlockModal() {
+            initAudio();
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            const modal = document.getElementById('modal-purchase-confirm');
+            const pBtn = document.getElementById('btn-purchase-execute');
+            if (pBtn) {
+                pBtn.textContent = dict.catcherFreeUnlockBtn || "無料でアンロック";
+            }
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeRoombaUnlockModal() {
+            const modal = document.getElementById('modal-purchase-confirm');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        safeAddListener('btn-purchase-cancel', 'click', closeRoombaUnlockModal);
+
+        safeAddListener('btn-purchase-execute', 'click', () => {
+            state.hasRoomba = true;
+            state.roombaActive = true;
+            state.batteryHighPowerLeft = 7200;
+            playPopSound("C6");
+            
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            showGameToast(dict.catcherUnlockedMsg);
+            
+            closeRoombaUnlockModal();
+            applyRoombaUIState();
+            updateUI();
+            saveGameDataNow();
+        });
+
+        safeAddListener('btn-buy-roomba', 'click', () => {
+            initAudio();
+            if (!state.hasRoomba) { 
+                openRoombaUnlockModal();
+            } else { 
+                state.roombaActive = !state.roombaActive; 
+                playPopSound("G5"); 
+                
+                const lang = state.language || 'ja';
+                const dict = I18N[lang] || I18N.ja;
+                showGameToast(state.roombaActive ? dict.catcherResumedMsg : dict.catcherPausedMsg);
+                
+                applyRoombaUIState(); updateUI(); saveGameDataNow();
+            }
+        });
+
+        safeAddListener('eco-battery-banner', 'click', () => {
+            if (state.hasRoomba && !state.roombaActive) {
+                initAudio();
+                state.roombaActive = true;
+                playPopSound("G5");
+                const lang = state.language || 'ja';
+                const dict = I18N[lang] || I18N.ja;
+                showGameToast(dict.catcherResumedMsg);
+                applyRoombaUIState();
+                updateUI();
+                saveGameDataNow();
+            }
+        });
+
+        function showComingSoonNotice() {
+            initAudio();
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            showGameToast(dict.comingSoonToast);
+        }
+
+        safeAddListener('card-golden', 'click', showComingSoonNotice);
+        safeAddListener('box-roomba-speed', 'click', showComingSoonNotice);
+        safeAddListener('box-roomba-battery', 'click', showComingSoonNotice);
+
+        function updateFeverCardUI() {
+            const btn = document.getElementById('txt-fever-card-btn');
+            const card = document.getElementById('card-fever');
+            if (!btn || !card) return;
+
+            const now = Date.now();
+            const remainingMs = (state.feverAvailableTimestamp || 0) - now;
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+
+            if (remainingMs > 0) {
+                const totalSec = Math.ceil(remainingMs / 1000);
+                const m = Math.floor(totalSec / 60);
+                const s = totalSec % 60;
+                btn.textContent = `${dict.feverWaiting || '⏳ 待機'} ${m}:${s < 10 ? '0' : ''}${s}`;
+                btn.className = "w-full bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 text-center mt-auto pointer-events-none border border-stone-500";
+                card.style.opacity = "0.75";
+            } else {
+                btn.textContent = dict.feverAdBtn || "📺 お試し発動";
+                btn.className = "w-full bg-pink-500 text-white font-extrabold text-[8px] rounded py-0.5 text-center mt-auto pointer-events-none border border-pink-700";
+                card.style.opacity = "1";
+            }
+        }
+
+        function openFeverConfirm() {
+            initAudio();
+            const now = Date.now();
+            if (state.feverAvailableTimestamp && now < state.feverAvailableTimestamp) {
+                const remainingSec = Math.ceil((state.feverAvailableTimestamp - now) / 1000);
+                const m = Math.floor(remainingSec / 60);
+                const s = remainingSec % 60;
+                const lang = state.language || 'ja';
+                const dict = I18N[lang] || I18N.ja;
+                showGameToast(dict.feverCooldownMsg(m, s));
+                return;
+            }
+
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            const modal = document.getElementById('modal-fever-confirm');
+            const fBtn = document.getElementById('btn-fever-execute');
+            if (fBtn) {
+                fBtn.textContent = dict.feverStartBtn || "今すぐ発動！";
+            }
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeFeverConfirm() {
+            const modal = document.getElementById('modal-fever-confirm');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        safeAddListener('btn-fever-cancel', 'click', closeFeverConfirm);
+        safeAddListener('btn-fever-execute', 'click', () => {
+            const now = Date.now();
+            if (state.feverAvailableTimestamp && now < state.feverAvailableTimestamp) {
+                closeFeverConfirm();
+                return;
+            }
+            closeFeverConfirm();
+            initAudio();
+            state.feverTimeLeft += 20;
+            state.feverAvailableTimestamp = Date.now() + (180 * 1000);
+            playPopSound("C6");
+            
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            showGameToast(dict.feverStartMsg);
+            
+            updateFeverCardUI();
+            updateUI(); 
+            saveGameDataNow();
+        });
+
+        safeAddListener('card-fever', 'click', openFeverConfirm);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                initAudio();
+                const targetBtn = e.currentTarget;
+                state.language = targetBtn.getAttribute('data-lang') || 'ja';
+                state.hasSelectedLanguage = true;
+                applyTranslations();
+                saveGameDataNow();
+                
+                const modalLang = document.getElementById('modal-language');
+                if (modalLang) {
+                    modalLang.classList.add('hidden');
+                    modalLang.classList.remove('flex');
+                }
+                
+                if (!state.hasCompletedTutorial) {
+                    const tut = document.getElementById('modal-tutorial');
+                    if (tut) {
+                        tut.classList.remove('hidden');
+                        tut.classList.add('flex');
+                    }
+                }
+                playPopSound("C6");
+            });
+        });
+
+        document.querySelectorAll('.settings-lang-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                initAudio();
+                state.language = e.currentTarget.getAttribute('data-lang') || 'ja';
+                state.hasSelectedLanguage = true;
+                applyTranslations();
+                saveGameDataNow();
+                playPopSound("C6");
+            });
+        });
+
+        safeAddListener('btn-tutorial-next', 'click', () => {
+            initAudio();
+            document.getElementById('modal-tutorial').classList.add('hidden');
+            state.hasCompletedTutorial = true;
+            saveGameDataNow();
+        });
+        safeAddListener('btn-offline-close', 'click', () => {
+            document.getElementById('modal-offline').classList.add('hidden');
+            document.getElementById('modal-offline').classList.remove('flex');
+        });
+
+        function openSettingsModal() {
+            initAudio();
+            updateSettingsModalUI();
+            const modal = document.getElementById('modal-settings');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('modal-settings');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        safeAddListener('btn-settings', 'click', openSettingsModal);
+        safeAddListener('btn-settings-close', 'click', closeSettingsModal);
+        safeAddListener('btn-settings-ok', 'click', closeSettingsModal);
+
+        safeAddListener('toggle-bgm', 'click', async () => {
+            if (!audioReady) await initAudio();
+            state.bgmEnabled = !state.bgmEnabled;
+            applyAudioVolumes();
+            updateSettingsModalUI();
+            saveGameDataNow();
+        });
+
+        safeAddListener('toggle-se', 'click', async () => {
+            if (!audioReady) await initAudio();
+            state.seEnabled = !state.seEnabled;
+            applyAudioVolumes();
+            updateSettingsModalUI();
+            if (state.seEnabled) playPopSound("C6");
+            saveGameDataNow();
+        });
+
+        safeAddListener('slider-bgm', 'input', (e) => {
+            state.bgmVolume = parseInt(e.target.value, 10);
+            applyAudioVolumes();
+            updateSettingsModalUI();
+        });
+        safeAddListener('slider-bgm', 'change', () => { saveGameDataNow(); });
+
+        safeAddListener('slider-se', 'input', (e) => {
+            state.seVolume = parseInt(e.target.value, 10);
+            applyAudioVolumes();
+            updateSettingsModalUI();
+        });
+        safeAddListener('slider-se', 'change', () => { saveGameDataNow(); });
+
+        safeAddListener('btn-test-se', 'click', async () => {
+            if (!audioReady) await initAudio();
+            playPopSound("C6");
+        });
+
+        function renderDexList() {
+            const list = document.getElementById('dex-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+
+            const isRegular = state.activeDexTab === 'regular';
+            const isSpecial = state.activeDexTab === 'special';
+            const isLogin = state.activeDexTab === 'login';
+
+            let targetList = [];
+            if (isRegular) targetList = REGULAR_GHOST_TYPES;
+            else if (isSpecial) targetList = [...WEEKDAY_GHOST_TYPES, ...MONTH_GHOST_TYPES];
+            else if (isLogin) targetList = MILESTONE_GHOST_TYPES;
+
+            const curDay = getCurrentDay();
+            const curMonth = getCurrentMonth();
+            const curLoginDays = state.totalLoginDays || 1;
+
+            targetList.forEach(t => {
+                const unlocked = !!state.unlockedDex[t.id];
+                const isReadyToUnlock = !unlocked && canUnlockGhost(t);
+                
+                const isTodayActive = t.targetDay !== undefined && t.targetDay === curDay;
+                const isMonthActive = t.targetMonth !== undefined && t.targetMonth === curMonth;
+                const isSeasonActive = isTodayActive || isMonthActive;
+                const isMilestoneReached = t.reqDays !== undefined && curLoginDays >= t.reqDays;
+
+                const loc = getGhostLocalizedData(t);
+                const dName = t.targetDay !== undefined ? dict.dayNames[t.targetDay] : null;
+                const mName = t.targetMonth !== undefined ? dict.monthNames[t.targetMonth - 1] : null;
+
+                const card = document.createElement('div');
+                card.className = `doodle-box p-2 flex flex-col justify-between items-center text-center transition-all ${
+                    unlocked ? 'bg-white' : (isReadyToUnlock ? 'bg-gradient-to-b from-amber-50 to-orange-50 border-amber-500 shadow-md' : 'bg-stone-200 opacity-90')
+                }`;
+
+                let condHtml = '';
+                if (unlocked) {
+                    const count = state.ghostCounts[t.id] || 0;
+                    condHtml = `
+                        <p class="text-[8px] text-stone-600 leading-snug mt-0.5">${loc.desc}</p>
+                        <span class="text-[7.5px] text-stone-400 font-bold mt-0.5">${dict.dexUnlockedTotal}: ${formatAstronomicalNumber(count)} ${dict.dexUnitGhosts}</span>
+                    `;
+                } else if (isReadyToUnlock) {
+                    condHtml = `
+                        <div class="w-full mt-1 flex flex-col items-center">
+                            <span class="text-[8px] font-extrabold text-amber-700 mb-1">${dict.dexReadyUnlock}</span>
+                            <button onclick="unlockGhostManually('${t.id}')" class="doodle-button w-full py-1 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-stone-900 font-extrabold text-[9px] rounded flex items-center justify-center gap-1 animate-pulse shadow">
+                                <span>✨</span><span>${dict.dexUnlockBtn}</span>
+                            </button>
+                        </div>
+                    `;
+                } else if (isLogin) {
+                    const diff = Math.max(0, t.reqDays - curLoginDays);
+                    condHtml = `
+                        <div class="w-full bg-stone-100 rounded px-1.5 py-1 mt-0.5 text-left">
+                            <div class="text-[7.5px] font-extrabold ${isMilestoneReached ? 'text-emerald-700 font-black' : 'text-stone-700'}">
+                                ${isMilestoneReached ? '✨ ' + dict.dexInRoom : `🏆 Day ${t.reqDays}`}
+                            </div>
+                            <p class="text-[7px] text-stone-500 mt-0.5 leading-tight">${isMilestoneReached ? loc.desc : `+${diff} days`}</p>
+                        </div>
+                    `;
+                } else if (isSpecial) {
+                    condHtml = `
+                        <div class="w-full bg-stone-100 rounded px-1.5 py-1 mt-0.5 text-left">
+                            <div class="text-[7.5px] font-extrabold ${isSeasonActive ? 'text-emerald-700 font-black' : 'text-stone-600'}">
+                                ${isSeasonActive ? '✨ ' + dict.dexInRoom : `📅 ${dName || mName}`}
+                            </div>
+                            <p class="text-[7px] text-stone-500 mt-0.5 leading-tight">${isSeasonActive ? loc.desc : '...'}</p>
+                        </div>
+                    `;
+                } else {
+                    if (t.requireType && t.unlockCost) {
+                        const reqObj = REGULAR_GHOST_TYPES.find(gt => gt.id === t.requireType);
+                        const reqLoc = reqObj ? getGhostLocalizedData(reqObj) : { name: dict.unknown };
+                        const reqName = reqObj ? (state.unlockedDex[reqObj.id] ? reqLoc.name : dict.unknown) : dict.unknown;
+                        const curCount = state.ghostCounts[t.requireType] || 0;
+                        const progress = Math.min(curCount, t.unlockCost);
+                        const percent = Math.min(100, Math.floor((progress / t.unlockCost) * 100));
+                        condHtml = `
+                            <div class="w-full bg-amber-50/80 border border-amber-300 rounded px-1.5 py-1 mt-0.5 text-left">
+                                <div class="text-[7.5px] font-extrabold text-amber-900 truncate">${dict.dexReqCondition}</div>
+                                <div class="text-[7.5px] font-bold text-stone-700 truncate">【${reqName}】× ${formatAstronomicalNumber(t.unlockCost)}</div>
+                                <div class="flex justify-between items-center text-[7px] font-bold text-stone-500 mt-0.5">
+                                    <span>${dict.dexProgress} ${formatAstronomicalNumber(progress)}</span>
+                                    <span class="text-amber-700">${percent}%</span>
+                                </div>
+                                <div class="w-full bg-stone-200 h-1 rounded-full overflow-hidden mt-0.5">
+                                    <div class="bg-amber-500 h-full transition-all duration-200" style="width: ${percent}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        condHtml = `<p class="text-[8px] text-stone-500 mt-0.5">${dict.dexInitialUnlocked}</p>`;
+                    }
+                }
+
+                let tagBadge = '';
+                if (isSeasonActive || isMilestoneReached) {
+                    tagBadge = `<span class="text-[7px] font-extrabold bg-emerald-500 text-white px-1 rounded animate-pulse">${dict.dexInRoom}</span>`;
+                } else if (dName) {
+                    tagBadge = `<span class="text-[7px] font-extrabold bg-indigo-100 text-indigo-800 px-1 rounded">${dName}</span>`;
+                } else if (mName) {
+                    tagBadge = `<span class="text-[7px] font-extrabold bg-pink-100 text-pink-800 px-1 rounded">${mName}</span>`;
+                } else if (t.reqDays) {
+                    tagBadge = `<span class="text-[7px] font-extrabold bg-rose-100 text-rose-800 px-1 rounded">${t.reqDays}d</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="w-full flex justify-between items-center mb-0.5 gap-0.5">
+                        <span class="font-extrabold text-[10px] text-stone-800 truncate">${unlocked ? loc.name : ((isSeasonActive || isMilestoneReached) ? loc.name : dict.unknown)}</span>
+                        <div class="flex items-center gap-1 shrink-0">
+                            ${tagBadge}
+                            <span class="text-[8.5px] font-bold ${isReadyToUnlock ? 'bg-amber-300' : 'bg-amber-200'} px-1 rounded border border-stone-800">+${formatDexValue(t.value)}</span>
+                        </div>
+                    </div>
+                    <div class="w-14 h-14 my-0.5 bg-[#fdfbf7] rounded-lg border border-dashed ${isReadyToUnlock ? 'border-amber-400 bg-amber-50/50' : ((isSeasonActive || isMilestoneReached) ? 'border-emerald-400 bg-emerald-50/40' : 'border-stone-300')} flex items-center justify-center overflow-hidden">
+                        <img src="${generateGhostSpriteData(t, unlocked || isSeasonActive || isMilestoneReached)}" alt="ghost" class="w-12 h-12 object-contain" />
+                    </div>
+                    ${condHtml}
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        safeAddListener('dex-tab-regular', 'click', () => {
+            state.activeDexTab = 'regular';
+            document.getElementById('dex-tab-regular').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-stone-800 text-white";
+            document.getElementById('dex-tab-special').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-white text-stone-800";
+            document.getElementById('dex-tab-login').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-white text-stone-800";
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            document.getElementById('dex-title-txt').textContent = dict.dexTitleRegular;
+            renderDexList();
+        });
+
+        safeAddListener('dex-tab-special', 'click', () => {
+            state.activeDexTab = 'special';
+            document.getElementById('dex-tab-special').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-stone-800 text-white";
+            document.getElementById('dex-tab-regular').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-white text-stone-800";
+            document.getElementById('dex-tab-login').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-white text-stone-800";
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            document.getElementById('dex-title-txt').textContent = dict.dexTitleSpecial;
+            renderDexList();
+        });
+
+        safeAddListener('dex-tab-login', 'click', () => {
+            state.activeDexTab = 'login';
+            document.getElementById('dex-tab-login').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-stone-800 text-white";
+            document.getElementById('dex-tab-regular').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-white text-stone-800";
+            document.getElementById('dex-tab-special').className = "flex-1 py-1 text-[9px] font-extrabold rounded border-2 border-stone-800 bg-white text-stone-800";
+            const lang = state.language || 'ja';
+            const dict = I18N[lang] || I18N.ja;
+            document.getElementById('dex-title-txt').textContent = dict.dexTitleLogin;
+            renderDexList();
+        });
+
+        safeAddListener('btn-dex', 'click', () => {
+            renderDexList();
+            const modal = document.getElementById('modal-dex');
+            if (modal) {
+                modal.classList.remove('hidden'); 
+                modal.classList.add('flex');
+            }
+        });
+        safeAddListener('close-dex', 'click', () => { 
+            const modal = document.getElementById('modal-dex');
+            if (modal) {
+                modal.classList.add('hidden'); 
+                modal.classList.remove('flex'); 
+            }
+        });
+        function gameLoop() {
+            try {
+                const now = Date.now();
+                const dt = Math.min(0.2, (now - state.lastTickTime) / 1000);
+                const elapsedMs = dt * 1000;
+                state.lastTickTime = now;
+
+                if (state.feverTimeLeft > 0) {
+                    state.feverTimeLeft -= dt;
+                    const canvasBox = document.getElementById('canvas-container');
+                    if (canvasBox && !canvasBox.classList.contains('fever-mode')) {
+                        canvasBox.classList.add('fever-mode');
+                    }
+                    if (audioReady && lastAppliedBpm !== 138) {
+                        Tone.Transport.bpm.value = 138;
+                        lastAppliedBpm = 138;
+                    }
+                    if (state.feverTimeLeft <= 0) { 
+                        state.feverTimeLeft = 0;
+                        if (canvasBox) canvasBox.classList.remove('fever-mode'); 
+                        if (audioReady && lastAppliedBpm !== 104) {
+                            Tone.Transport.bpm.value = 104;
+                            lastAppliedBpm = 104;
+                        }
+                        const lang = state.language || 'ja';
+                        const dict = I18N[lang] || I18N.ja;
+                        showGameToast(dict.feverEndMsg);
+                        saveGameDataNow();
+                    }
+                } else if (audioReady && lastAppliedBpm !== 104) {
+                    Tone.Transport.bpm.value = 104;
+                    lastAppliedBpm = 104;
+                }
+
+                if (state.hasRoomba && state.roombaActive) {
+                    const timerTxt = document.getElementById('fast-battery-timer-txt');
+                    if (timerTxt) timerTxt.textContent = formatHoursMinutesSeconds(state.batteryHighPowerLeft);
+                }
+
+                updateFeverCardUI();
+
+                ctx.clearRect(0, 0, cw, ch);
+                ctx.fillStyle = '#e5e0d5';
+                for (let x = 20; x < cw; x += 28) { 
+                    for (let y = 20; y < ch; y += 28) { 
+                        ctx.beginPath(); ctx.arc(x, y, 1.5, 0, Math.PI * 2); ctx.fill(); 
+                    } 
+                }
+
+                // スポーン処理
+                const intervalMs = getSpawnIntervalMs();
+                const batchSize = getSpawnBatchSize();
+                state.spawnAccumulatorMs += elapsedMs;
+
+                if (state.spawnAccumulatorMs > intervalMs * 15) {
+                    state.spawnAccumulatorMs = intervalMs * 15;
+                }
+
+                if (state.spawnAccumulatorMs >= intervalMs) {
+                    const spawnsNeeded = Math.min(5, Math.floor(state.spawnAccumulatorMs / intervalMs));
+                    state.spawnAccumulatorMs -= spawnsNeeded * intervalMs;
+                    bulkSpawnGhosts(spawnsNeeded * batchSize);
+                    isUiDirty = true;
+                }
+
+                const active = getActiveGhosts();
+                for (let i = 0; i < active.length; i++) {
+                    const g = active[i];
+                    if (g.scale < 1) g.scale += (1 - g.scale) * 0.25;
+                    g.wobbleOffset += g.wobbleSpeed;
+
+                    if (g.isMilestone) {
+                        const targetCenterX = cw / 2;
+                        const targetCenterY = ch / 2;
+                        g.x += (targetCenterX - g.x) * 0.04;
+                        g.y += (targetCenterY - g.y) * 0.04;
+                        g.vx *= 0.8;
+                        g.vy *= 0.8;
+                    } else {
+                        if (Math.random() < 0.03) { g.vx += (Math.random() - 0.5) * 0.8; g.vy += (Math.random() - 0.5) * 0.8; }
+                        const maxSpeed = g.isBaby ? 2.4 : 1.6;
+                        const speed = Math.hypot(g.vx, g.vy);
+                        if (speed > maxSpeed) { g.vx = (g.vx / speed) * maxSpeed; g.vy = (g.vy / speed) * maxSpeed; }
+                        g.x += g.vx; g.y += g.vy;
+                        if (Math.abs(g.vx) > 0.2) g.facing = g.vx >= 0 ? 1 : -1;
+                        const margin = g.radius + 8;
+                        if (g.x < margin) { g.x = margin; g.vx *= -1; } if (g.x > cw - margin) { g.x = cw - margin; g.vx *= -1; }
+                        if (g.y < margin) { g.y = margin; g.vy *= -1; } if (g.y > ch - margin) { g.y = ch - margin; g.vy *= -1; }
+                    }
+
+                    const stretchX = 1 + Math.sin(g.wobbleOffset) * 0.06, stretchY = 1 + Math.cos(g.wobbleOffset) * 0.06;
+                    const baseScale = g.isMilestone ? 3.0 : (g.isBaby ? 0.65 : 1.0);
+                    const stackScale = 1 + Math.min(0.25, Math.log10(Math.max(1, g.stackCount)) * 0.07);
+                    g.el.style.transform = `translate3d(${g.x - 28}px, ${g.y - 28}px, 0) scale(${g.scale * baseScale * stackScale})`;
+                    g.img.style.transform = `scale(${stretchX * g.facing}, ${stretchY})`;
+                }
+
+                if (state.hasRoomba && state.roombaActive) {
+                    const rb = state.roombaObj;
+                    const powerRadius = 38;
+
+                    rb.x += rb.vx; rb.y += rb.vy;
+                    if (rb.x < powerRadius || rb.x > cw - powerRadius) rb.vx *= -1;
+                    if (rb.y < powerRadius || rb.y > ch - powerRadius) rb.vy *= -1;
+
+                    ctx.save();
+                    ctx.translate(rb.x, rb.y);
+                    ctx.beginPath(); ctx.arc(0, 0, powerRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(16, 185, 129, 0.2)'; ctx.fill();
+                    ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.strokeStyle = '#10b981'; ctx.stroke();
+
+                    ctx.setLineDash([]);
+                    ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2);
+                    ctx.fillStyle = '#10b981'; ctx.fill();
+                    ctx.lineWidth = 3; ctx.strokeStyle = '#2d2d2d'; ctx.stroke();
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
+                    const lang = state.language || 'ja';
+                    const dict = I18N[lang] || I18N.ja;
+                    ctx.fillText(dict.catcherCanvasFast || '⚡強力', 0, -2);
+                    ctx.fillText('FAST', 0, 7);
+                    ctx.restore();
+
+                    const curActive = getActiveGhosts();
+                    for (let i = curActive.length - 1; i >= 0; i--) {
+                        const g = curActive[i];
+                        if (g.isMilestone) continue;
+
+                        if (Math.hypot(g.x - rb.x, g.y - rb.y) <= powerRadius + g.radius * 0.7) {
+                            collectGhostInstance(g, 0.10);
+                        }
+                    }
+                }
+
+                if (isPointerDown && pointerPos.x > 0) {
+                    const radius = getSwipeRadius();
+                    ctx.save(); ctx.beginPath(); ctx.arc(pointerPos.x, pointerPos.y, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = state.feverTimeLeft > 0 ? 'rgba(244, 63, 94, 0.22)' : 'rgba(251, 191, 36, 0.22)';
+                    ctx.fill(); ctx.lineWidth = 2.5; ctx.setLineDash([6, 4]); 
+                    ctx.strokeStyle = state.feverTimeLeft > 0 ? '#e11d48' : '#d97706'; 
+                    ctx.stroke(); ctx.restore();
+                }
+
+                // パーティクル描画
+                for (let i = state.particles.length - 1; i >= 0; i--) {
+                    const p = state.particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
+                    if (p.alpha <= 0) { state.particles.splice(i, 1); continue; }
+                    ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                }
+
+                // 浮遊テキスト描画
+                if (state.floatingTexts.length > 0) {
+                    ctx.save();
+                    ctx.font = '800 13px "M PLUS Rounded 1c", sans-serif';
+                    ctx.textAlign = 'center';
+                    for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+                        const ft = state.floatingTexts[i]; ft.y += ft.vy; ft.alpha -= 0.03;
+                        if (ft.alpha <= 0) { state.floatingTexts.splice(i, 1); continue; }
+                        ctx.globalAlpha = ft.alpha;
+                        ctx.fillStyle = ft.color;
+                        ctx.fillText(ft.text, ft.x, ft.y);
+                    }
+                    ctx.restore();
+                }
+
+                if (isUiDirty) {
+                    updateUI();
+                    checkDexUnlocks();
+                    isUiDirty = false;
+                }
+
+                // ブラウザのスロットリング対策: メインループ内で確実に2秒ごとにセーブする
+                if (now - lastAutoSaveTime >= 2000) {
+                    saveGameDataNow();
+                }
+            } catch (err) {
+                console.error("[gameLoop Error]", err);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startApp() {
+            try {
+                resizeCanvas();
+                initGhostDOMPool();
+                loadGameData();
+                state.lastTickTime = Date.now();
+                requestAnimationFrame(gameLoop);
+
+                setTimeout(dismissTutorialToast, 4000);
+            } catch (initErr) {
+                console.error("[startApp Error]", initErr);
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
+    </script>
+</body>
+</html>
