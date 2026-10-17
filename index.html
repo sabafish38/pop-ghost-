@@ -15,17 +15,18 @@
             font-family: 'M PLUS Rounded 1c', sans-serif;
             box-sizing: border-box;
         }
-         #game-app {
-            zoom: 0.80;height: 100vh;
-        }
-
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%;
+            height: 100dvh; /* モバイルブラウザの上下バーを考慮した高さ */
             overflow: hidden;
             background-color: #1c1917;
+        }
+        #game-app {
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            zoom: 1 !important; /* ズームは解除して自動フィットを活用 */
         }
         .doodle-box {
             background: #ffffff;
@@ -149,7 +150,7 @@
 </head>
 <body class="flex flex-row h-screen w-screen overflow-hidden bg-stone-900 justify-center items-center relative">
 
-    <div id="game-app" class="flex flex-col h-full w-full max-w-md bg-[#fdfbf7] relative shadow-2xl border-x-2 border-stone-800 shrink-0 z-10">
+    <div id="game-app" class="flex flex-col h-[100dvh] w-full max-w-md bg-[#fdfbf7] relative shadow-2xl border-x-2 border-stone-800 shrink-0 z-10 overflow-hidden">
         <!-- ヘッダー -->
         <header class="z-20 px-3 py-2 bg-[#fdfbf7]/95 backdrop-blur-sm border-b-2 border-dashed border-stone-300 flex flex-col gap-1.5">
             <div class="doodle-box px-3 py-1.5 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
@@ -205,7 +206,221 @@
                 👆 指でなぞっておばけを吸い込もう！
             </div>
         </main>
-        <footer class="z-20 bg-[#f5f0e6] border-t-2 border-stone-800 px-2 py-2">
+        <footer class="z-20 bg-[#f5f0e6] border-t-2 border-stone-800 px-2 py-1.5 shrink-0">
+            <div class="flex gap-1.5 mb-1">
+                <button id="tab-upgrade" class="flex-1 py-0.5 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
+                    🛠️ <span id="txt-tab-upgrade">育成・強化</span>
+                </button>
+                <button id="tab-shop" class="flex-1 py-0.5 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative">
+                    💎 <span id="txt-tab-shop">キャッチャー</span>
+                </button>
+            </div>
+
+            <!-- 育成強化パネル -->
+            <div id="panel-upgrade" class="grid grid-cols-2 gap-1">
+                <button id="upg-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-speed-name" class="text-[10px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
+                        <span id="lvl-speed" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div class="flex justify-between items-center w-full">
+                        <div id="txt-upg-speed-desc" class="text-[7px] text-stone-500 font-medium truncate">湧く間隔短縮</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-speed">15</span></div>
+                    </div>
+                </button>
+
+                <button id="upg-cap" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-cap-name" class="text-[10px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
+                        <span id="lvl-cap" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div class="flex justify-between items-center w-full">
+                        <div id="txt-upg-cap-desc" class="text-[7px] text-stone-500 font-medium truncate">上限UP</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-cap">30</span></div>
+                    </div>
+                </button>
+
+                <button id="upg-rare" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-rare-name" class="text-[10px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
+                        <span id="lvl-rare" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div class="flex justify-between items-center w-full">
+                        <div id="txt-upg-rare-desc" class="text-[7px] text-stone-500 font-medium truncate">レア出現率UP</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-rare">50</span></div>
+                    </div>
+                </button>
+
+                <button id="upg-magnet" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-magnet-name" class="text-[10px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
+                        <span id="lvl-magnet" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div class="flex justify-between items-center w-full">
+                        <div id="txt-upg-magnet-desc" class="text-[7px] text-stone-500 font-medium truncate">範囲拡大</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-magnet">40</span></div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- キャッチャー管理パネル -->
+            <div id="panel-shop" class="hidden grid-cols-2 gap-1">
+                <div class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-cyan-50 to-blue-50 border-sky-600 col-span-2 sm:col-span-1">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-catcher-card-title" class="text-[10px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
+                        <span id="roomba-badge" class="text-[7.5px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
+                    </div>
+                    <div class="flex gap-1 mt-0.5">
+                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9px] rounded py-0.5 shadow-sm transition">
+                            【試験版】無料でアンロック
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="card-fever" class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-pink-50 to-red-50 border-pink-500 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
+                        <span id="txt-fever-card-title" class="text-[9.5px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
+                        <span id="txt-fever-card-time" class="text-[7px] font-bold bg-pink-500 text-white px-1 rounded">20秒</span>
+                    </div>
+                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
+                </div>
+
+                <div id="card-golden" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
+                        <span id="txt-golden-card-title" class="text-[9px] font-extrabold text-stone-700 tracking-tighter">👑 黄金キャッチャー</span>
+                        <span class="text-[7px] font-bold bg-amber-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
+                </div>
+
+                <div id="box-roomba-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full pointer-events-none">
+                        <span id="txt-speed-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
+                        <span class="text-[7.5px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
+                        <span>🔒 正式版で強化可能</span>
+                    </div>
+                </div>
+
+                <div id="box-roomba-battery" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full pointer-events-none">
+                        <span id="txt-battery-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
+                        <span class="text-[7.5px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
+                        <span>🔒 正式版で拡張可能</span>
+                    </div>
+                </div>
+            </div>
+        </footer> border-t-2 border-stone-800 px-2 py-1.5 shrink-0">
+            <div class="flex gap-1.5 mb-1">
+                <button id="tab-upgrade" class="flex-1 py-0.5 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
+                    🛠️ <span id="txt-tab-upgrade">育成・強化</span>
+                </button>
+                <button id="tab-shop" class="flex-1 py-0.5 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative">
+                    💎 <span id="txt-tab-shop">キャッチャー</span>
+                </button>
+            </div>
+
+            <!-- 育成強化パネル -->
+            <div id="panel-upgrade" class="grid grid-cols-2 gap-1">
+                <button id="upg-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-speed-name" class="text-[10px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
+                        <span id="lvl-speed" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div class="flex justify-between items-center w-full">
+                        <div id="txt-upg-speed-desc" class="text-[7px] text-stone-500 font-medium truncate">湧く間隔短縮</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-speed">15</span></div>
+                    </div>
+                </button>
+
+                <button id="upg-cap" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-cap-name" class="text-[10px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
+                        <span id="lvl-cap" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div class="flex justify-between items-center w-full">
+                        <div id="txt-upg-cap-desc" class="text-[7px] text-stone-500 font-medium truncate">上限UP</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-cap">30</span></div>
+                    </div>
+                </button>
+
+                <button id="upg-rare" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-rare-name" class="text-[10px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
+                        <span id="lvl-rare" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div class="flex justify-between items-center w-full">
+                        <div id="txt-upg-rare-desc" class="text-[7px] text-stone-500 font-medium truncate">レア出現率UP</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-rare">50</span></div>
+                    </div>
+                </button>
+
+                <button id="upg-magnet" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-upg-magnet-name" class="text-[10px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
+                        <span id="lvl-magnet" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div class="flex justify-between items-center w-full">
+                        <div id="txt-upg-magnet-desc" class="text-[7px] text-stone-500 font-medium truncate">範囲拡大</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-magnet">40</span></div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- キャッチャー管理パネル -->
+            <div id="panel-shop" class="hidden grid-cols-2 gap-1">
+                <div class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-cyan-50 to-blue-50 border-sky-600 col-span-2 sm:col-span-1">
+                    <div class="flex justify-between items-center w-full">
+                        <span id="txt-catcher-card-title" class="text-[10px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
+                        <span id="roomba-badge" class="text-[7.5px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
+                    </div>
+                    <div class="flex gap-1 mt-0.5">
+                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9px] rounded py-0.5 shadow-sm transition">
+                            【試験版】無料でアンロック
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="card-fever" class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-pink-50 to-red-50 border-pink-500 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
+                        <span id="txt-fever-card-title" class="text-[9.5px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
+                        <span id="txt-fever-card-time" class="text-[7px] font-bold bg-pink-500 text-white px-1 rounded">20秒</span>
+                    </div>
+                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
+                </div>
+
+                <div id="card-golden" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
+                        <span id="txt-golden-card-title" class="text-[9px] font-extrabold text-stone-700 tracking-tighter">👑 黄金キャッチャー</span>
+                        <span class="text-[7px] font-bold bg-amber-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
+                </div>
+
+                <div id="box-roomba-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full pointer-events-none">
+                        <span id="txt-speed-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
+                        <span class="text-[7.5px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
+                        <span>🔒 正式版で強化可能</span>
+                    </div>
+                </div>
+
+                <div id="box-roomba-battery" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex justify-between items-center w-full pointer-events-none">
+                        <span id="txt-battery-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
+                        <span class="text-[7.5px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
+                    </div>
+                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
+                        <span>🔒 正式版で拡張可能</span>
+                    </div>
+                </div>
+            </div>
+        </footer> border-t-2 border-stone-800 px-2 py-2">
             <div class="flex gap-1.5 mb-1.5">
                 <button id="tab-upgrade" class="flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
                     🛠️ 育成・強化
@@ -216,44 +431,43 @@
             </div>
 
             <!-- 育成強化パネル -->
-            <div id="panel-upgrade" class="grid grid-cols-2 gap-1.5">
-                <button id="upg-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white min-h-[62px]">
+            <div id="panel-upgrade" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto no-scrollbar">
+                <button id="upg-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-speed-name" class="text-[10.5px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
-                        <span id="lvl-speed" class="text-[8.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                        <span id="txt-upg-speed-name" class="text-[11px] font-extrabold text-stone-800">⚡ 出現スピード</span>
+                        <span id="lvl-speed" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
                     </div>
-                    <div id="txt-upg-speed-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight mt-0.5">湧く間隔短縮＆大量出現</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-0.5">👻 <span id="cost-speed">15</span></div>
+                    <div id="txt-upg-speed-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">湧く間隔が短縮＆<br>一度にドバッと出現！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-speed">15</span></div>
                 </button>
 
-                <button id="upg-cap" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white min-h-[62px]">
+                <button id="upg-cap" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-cap-name" class="text-[10.5px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
-                        <span id="lvl-cap" class="text-[8.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                        <span id="txt-upg-cap-name" class="text-[11px] font-extrabold text-stone-800">🏠 おへや拡張</span>
+                        <span id="lvl-cap" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
                     </div>
-                    <div id="txt-upg-cap-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight mt-0.5">溜められる上限UP！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-0.5">👻 <span id="cost-cap">30</span></div>
+                    <div id="txt-upg-cap-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">おへやに溜められる<br>おばけの上限UP！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-cap">30</span></div>
                 </button>
 
-                <button id="upg-rare" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white min-h-[62px]">
+                <button id="upg-rare" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-rare-name" class="text-[10.5px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
-                        <span id="lvl-rare" class="text-[8.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                        <span id="txt-upg-rare-name" class="text-[11px] font-extrabold text-stone-800">🌈 突然変異率</span>
+                        <span id="lvl-rare" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
                     </div>
-                    <div id="txt-upg-rare-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight mt-0.5">高額レアおばけ出現率UP</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-0.5">👻 <span id="cost-rare">50</span></div>
+                    <div id="txt-upg-rare-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">高額なレア＆珍種<br>おばけの出現率UP！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-rare">50</span></div>
                 </button>
 
-                <button id="upg-magnet" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white min-h-[62px]">
+                <button id="upg-magnet" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-magnet-name" class="text-[10.5px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
-                        <span id="lvl-magnet" class="text-[8.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                        <span id="txt-upg-magnet-name" class="text-[11px] font-extrabold text-stone-800">🧲 吸引パワー</span>
+                        <span id="lvl-magnet" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
                     </div>
-                    <div id="txt-upg-magnet-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight mt-0.5">指の吸い込み範囲が拡大！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-0.5">👻 <span id="cost-magnet">40</span></div>
+                    <div id="txt-upg-magnet-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">指でなぞった時の<br>吸い込み範囲が拡大！</div>
+                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-magnet">40</span></div>
                 </button>
             </div>
-
 
             <!-- キャッチャー管理パネル -->
             <div id="panel-shop" class="hidden grid-cols-2 gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
