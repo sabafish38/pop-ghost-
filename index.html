@@ -15,36 +15,44 @@
             font-family: 'M PLUS Rounded 1c', sans-serif;
             box-sizing: border-box;
         }
-        body, html {
+        html, body {
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100dvh;
+            height: 100%;
+            position: fixed;
+            inset: 0;
             overflow: hidden;
             background-color: #1c1917;
         }
         #game-app {
-            height: 100dvh !important;
-            max-height: 100dvh !important;
+            position: relative;
+            width: 100%;
+            max-width: 448px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin: 0 auto;
         }
         .doodle-box {
             background: #ffffff;
             border: 2px solid #2d2d2d;
-            border-radius: 14px;
+            border-radius: 12px;
             box-shadow: 2px 2px 0px #2d2d2d;
             transition: all 0.1s ease;
         }
         .doodle-button {
             background: #ffffff;
             border: 2px solid #2d2d2d;
-            border-radius: 10px;
-            box-shadow: 0px 3px 0px #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0px 2.5px 0px #2d2d2d;
             transition: transform 0.08s ease, box-shadow 0.08s ease;
             touch-action: manipulation;
         }
         .doodle-button:active:not(:disabled) {
             transform: translateY(2px);
-            box-shadow: 0px 1px 0px #2d2d2d;
+            box-shadow: 0px 0.5px 0px #2d2d2d;
         }
         .doodle-button:disabled {
             opacity: 0.5;
@@ -68,8 +76,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             display: none;
             pointer-events: none;
             will-change: transform;
@@ -88,9 +96,9 @@
             right: -2px;
             background: #ff4757;
             color: #ffffff;
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 800;
-            padding: 1px 5px;
+            padding: 0.5px 4px;
             border-radius: 9999px;
             border: 1.5px solid #2d2d2d;
             box-shadow: 1px 1px 0px #2d2d2d;
@@ -105,10 +113,10 @@
             transform: translateX(-50%);
             background: #f59e0b;
             color: #ffffff;
-            font-size: 8px;
+            font-size: 7.5px;
             font-weight: 800;
-            padding: 0 4px;
-            border-radius: 6px;
+            padding: 0 3px;
+            border-radius: 5px;
             border: 1px solid #2d2d2d;
             white-space: nowrap;
         }
@@ -123,28 +131,27 @@
         }
     </style>
 </head>
-<body class="flex flex-row h-screen w-screen overflow-hidden bg-stone-900 justify-center items-center relative">
+<body class="bg-stone-900 justify-center items-center">
 
-    <div id="game-app" class="flex flex-col h-[100dvh] w-full max-w-md bg-[#fdfbf7] relative shadow-2xl border-x-2 border-stone-800 shrink-0 z-10 overflow-hidden">
-        <!-- ヘッダー -->
-        <header class="z-20 px-2.5 py-1.5 bg-[#fdfbf7]/95 backdrop-blur-sm border-b-2 border-dashed border-stone-300 flex flex-col gap-1 shrink-0">
-            <div class="doodle-box px-2.5 py-1 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
+    <div id="game-app" class="bg-[#fdfbf7] shadow-2xl border-x-2 border-stone-800">
+        <header class="z-20 px-2 py-1 bg-[#fdfbf7]/95 backdrop-blur-sm border-b-2 border-dashed border-stone-300 flex flex-col gap-0.5 shrink-0">
+            <div class="doodle-box px-2 py-0.5 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
                 <div class="flex items-center gap-1.5">
-                    <span class="text-xl animate-pulse">👻</span>
+                    <span class="text-lg animate-pulse">👻</span>
                     <div>
-                        <div id="txt-score-title" class="text-[8.5px] font-bold text-stone-500 tracking-wider">総獲得おばけ玉</div>
-                        <div id="score-display" class="text-lg font-extrabold text-stone-900 tracking-tight leading-none overflow-x-auto no-scrollbar max-w-[170px] sm:max-w-[210px]">0</div>
+                        <div id="txt-score-title" class="text-[8px] font-bold text-stone-500 tracking-wider leading-tight">総獲得おばけ玉</div>
+                        <div id="score-display" class="text-base font-extrabold text-stone-900 tracking-tight leading-none overflow-x-auto no-scrollbar max-w-[160px] sm:max-w-[200px]">0</div>
                     </div>
                 </div>
                 <div class="text-right shrink-0">
-                    <div id="txt-density-title" class="text-[8px] font-bold text-stone-500">おへや密度</div>
-                    <div id="count-display" class="text-[10px] font-extrabold text-stone-800">0 / 100</div>
+                    <div id="txt-density-title" class="text-[7.5px] font-bold text-stone-500 leading-tight">おへや密度</div>
+                    <div id="count-display" class="text-[9.5px] font-extrabold text-stone-800">0 / 100</div>
                 </div>
             </div>
 
-            <!-- コントロールバー（見切れ防止） -->
-            <div class="flex justify-between items-center gap-1">
-                <div class="h-2 bg-stone-200 rounded-full overflow-hidden border border-stone-800 flex-1 relative min-w-[40px]">
+            <!-- コントロールバー（ゲージ伸縮とコンパクトボタン） -->
+            <div class="flex justify-between items-center gap-1 mt-0.5">
+                <div class="h-2 bg-stone-200 rounded-full overflow-hidden border border-stone-800 flex-1 relative min-w-[35px]">
                     <div id="capacity-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-200" style="width: 0%;"></div>
                 </div>
 
@@ -158,99 +165,103 @@
 
                 <button id="btn-dex" class="doodle-button px-1.5 py-0.5 bg-amber-100 text-stone-800 font-bold text-[8px] flex items-center gap-0.5 relative shrink-0">
                     <span>📖</span><span id="txt-dex-btn">図鑑</span>
-                    <span id="dex-notify-badge" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[8px] font-extrabold w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white shadow hidden animate-bounce">!</span>
-                    <span id="save-indicator" class="absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[6px] px-1 rounded-full opacity-0 transition-opacity duration-300">保存</span>
+                    <span id="dex-notify-badge" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[7.5px] font-extrabold w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white shadow hidden animate-bounce">!</span>
+                    <span id="save-indicator" class="absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[6px] px-0.5 rounded-full opacity-0 transition-opacity duration-300">保存</span>
                 </button>
             </div>
         </header>
 
-        <!-- メイン画面（お部屋） -->
-        <main id="canvas-container" class="flex-1 relative overflow-hidden cursor-pointer bg-[#fdfbf7] touch-none min-h-0">
-            <div id="fast-battery-banner" class="absolute top-2 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[9.5px] font-extrabold px-3 py-1.5 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center animate-pulse">
+        <!-- メイン画面（おへや部分：画面の高さに合わせて自動伸縮） -->
+        <main id="canvas-container" class="flex-1 relative overflow-hidden cursor-pointer bg-[#fdfbf7] touch-none min-h-0 w-full">
+            <div id="fast-battery-banner" class="absolute top-1.5 left-1/2 -translate-x-1/2 w-[92%] max-w-[320px] bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center animate-pulse">
                 <span>⚡ <b id="txt-banner-fast-title">強力バッテリー稼働中！</b></span>
-                <span class="bg-white/20 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold">🔋<span id="txt-banner-fast-label">放置枠</span> <span id="fast-battery-timer-txt">2h</span></span>
+                <span class="bg-white/20 text-white text-[7.5px] px-1 py-0.5 rounded-full font-bold">🔋<span id="txt-banner-fast-label">放置枠</span> <span id="fast-battery-timer-txt">2h</span></span>
             </div>
 
-            <div id="eco-battery-banner" class="absolute top-2 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] bg-stone-700 text-amber-200 text-[9px] font-extrabold px-3 py-1 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center cursor-pointer pointer-events-auto">
+            <div id="eco-battery-banner" class="absolute top-1.5 left-1/2 -translate-x-1/2 w-[92%] max-w-[320px] bg-stone-700 text-amber-200 text-[8.5px] font-extrabold px-2.5 py-0.5 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center cursor-pointer pointer-events-auto">
                 <span>🍃 <b id="txt-banner-eco-title">キャッチャー一時停止中</b></span>
-                <span id="txt-banner-eco-sub" class="text-stone-300 text-[8px]">タップで再開</span>
+                <span id="txt-banner-eco-sub" class="text-stone-300 text-[7.5px]">タップで再開</span>
             </div>
 
             <canvas id="gameCanvas" class="absolute inset-0 block w-full h-full pointer-events-none z-0"></canvas>
             <div id="ghost-playground" class="absolute inset-0 z-10 pointer-events-none overflow-hidden"></div>
 
-            <div id="tutorial-toast" class="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 bg-stone-800/85 text-white text-[9.5px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap transition-opacity duration-500 z-30 shadow-md">
+            <div id="tutorial-toast" class="pointer-events-none absolute top-8 left-1/2 -translate-x-1/2 bg-stone-800/85 text-white text-[9px] font-bold px-3 py-1 rounded-full whitespace-nowrap transition-opacity duration-500 z-30 shadow-md">
                 👆 指でなぞっておばけを吸い込もう！
             </div>
         </main>
 
-        <!-- フッター（単一・スリム化・完全一体型） -->
-        <footer class="z-20 bg-[#f5f0e6] border-t-2 border-stone-800 px-2 py-1.5 shrink-0">
-            <div class="flex gap-1.5 mb-1">
-                <button id="tab-upgrade" class="flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
+        <!-- フッター（コンパクト化・画面内に必ず収まる固定エリア） -->
+        <footer class="z-20 bg-[#f5f0e6] border-t-2 border-stone-800 px-1.5 py-1 shrink-0">
+            <div class="flex gap-1 mb-1">
+                <button id="tab-upgrade" class="flex-1 py-0.5 text-[10px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition leading-tight">
                     🛠️ 育成・強化
                 </button>
-                <button id="tab-shop" class="flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative">
+                <button id="tab-shop" class="flex-1 py-0.5 text-[10px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative leading-tight">
                     💎 キャッチャー
                 </button>
             </div>
 
-            <!-- 育成強化パネル -->
-            <div id="panel-upgrade" class="grid grid-cols-2 gap-1">
-                <button id="upg-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-white min-h-[50px]">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-speed-name" class="text-[10px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
-                        <span id="lvl-speed" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+            <!-- 育成強化パネル（キャッチャー欄の3行分にぴったり合わせた高さ設定） -->
+            <div id="panel-upgrade" class="grid grid-cols-2 grid-rows-2 gap-1 h-[126px]">
+                <button id="upg-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white h-full">
+                    <div class="flex justify-between items-center w-full leading-tight">
+                        <span id="txt-upg-speed-name" class="text-[9.5px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
+                        <span id="lvl-speed" class="text-[7.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div class="flex justify-between items-center w-full mt-0.5">
-                        <div id="txt-upg-speed-desc" class="text-[7px] text-stone-500 font-medium truncate">湧く間隔短縮</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-speed">15</span></div>
-                    </div>
-                </button>
-
-                <button id="upg-cap" class="doodle-button p-1 text-left flex flex-col justify-between bg-white min-h-[50px]">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-cap-name" class="text-[10px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
-                        <span id="lvl-cap" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full mt-0.5">
-                        <div id="txt-upg-cap-desc" class="text-[7px] text-stone-500 font-medium truncate">上限UP</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-cap">30</span></div>
+                    <div id="txt-upg-speed-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight truncate">湧く間隔短縮＆大量出現</div>
+                    <div class="flex justify-between items-center w-full leading-tight">
+                        <span class="text-[6.5px] text-stone-400 font-bold">必要数</span>
+                        <div class="text-[8.5px] font-bold text-amber-600">👻 <span id="cost-speed">15</span></div>
                     </div>
                 </button>
 
-                <button id="upg-rare" class="doodle-button p-1 text-left flex flex-col justify-between bg-white min-h-[50px]">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-rare-name" class="text-[10px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
-                        <span id="lvl-rare" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                <button id="upg-cap" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white h-full">
+                    <div class="flex justify-between items-center w-full leading-tight">
+                        <span id="txt-upg-cap-name" class="text-[9.5px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
+                        <span id="lvl-cap" class="text-[7.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div class="flex justify-between items-center w-full mt-0.5">
-                        <div id="txt-upg-rare-desc" class="text-[7px] text-stone-500 font-medium truncate">レア出現率UP</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-rare">50</span></div>
+                    <div id="txt-upg-cap-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight truncate">溜められる上限UP</div>
+                    <div class="flex justify-between items-center w-full leading-tight">
+                        <span class="text-[6.5px] text-stone-400 font-bold">必要数</span>
+                        <div class="text-[8.5px] font-bold text-amber-600">👻 <span id="cost-cap">30</span></div>
                     </div>
                 </button>
 
-                <button id="upg-magnet" class="doodle-button p-1 text-left flex flex-col justify-between bg-white min-h-[50px]">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-magnet-name" class="text-[10px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
-                        <span id="lvl-magnet" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                <button id="upg-rare" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white h-full">
+                    <div class="flex justify-between items-center w-full leading-tight">
+                        <span id="txt-upg-rare-name" class="text-[9.5px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
+                        <span id="lvl-rare" class="text-[7.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div class="flex justify-between items-center w-full mt-0.5">
-                        <div id="txt-upg-magnet-desc" class="text-[7px] text-stone-500 font-medium truncate">範囲拡大</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-magnet">40</span></div>
+                    <div id="txt-upg-rare-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight truncate">レア・珍種出現率UP</div>
+                    <div class="flex justify-between items-center w-full leading-tight">
+                        <span class="text-[6.5px] text-stone-400 font-bold">必要数</span>
+                        <div class="text-[8.5px] font-bold text-amber-600">👻 <span id="cost-rare">50</span></div>
+                    </div>
+                </button>
+
+                <button id="upg-magnet" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white h-full">
+                    <div class="flex justify-between items-center w-full leading-tight">
+                        <span id="txt-upg-magnet-name" class="text-[9.5px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
+                        <span id="lvl-magnet" class="text-[7.5px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
+                    </div>
+                    <div id="txt-upg-magnet-desc" class="text-[7.5px] text-stone-500 font-medium leading-tight truncate">吸い込み範囲拡大</div>
+                    <div class="flex justify-between items-center w-full leading-tight">
+                        <span class="text-[6.5px] text-stone-400 font-bold">必要数</span>
+                        <div class="text-[8.5px] font-bold text-amber-600">👻 <span id="cost-magnet">40</span></div>
                     </div>
                 </button>
             </div>
 
             <!-- キャッチャー管理パネル -->
-            <div id="panel-shop" class="hidden grid-cols-2 gap-1">
+            <div id="panel-shop" class="hidden grid-cols-2 gap-1 h-[126px]">
                 <div class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-cyan-50 to-blue-50 border-sky-600 col-span-2 sm:col-span-1">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-catcher-card-title" class="text-[10px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
-                        <span id="roomba-badge" class="text-[7.5px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
+                        <span id="txt-catcher-card-title" class="text-[9.5px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
+                        <span id="roomba-badge" class="text-[7px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
                     </div>
                     <div class="flex gap-1 mt-0.5">
-                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9px] rounded py-0.5 shadow-sm transition">
+                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[8.5px] rounded py-0.5 shadow-sm transition">
                             【試験版】無料でアンロック
                         </button>
                     </div>
@@ -258,36 +269,36 @@
                 
                 <div id="card-fever" class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-pink-50 to-red-50 border-pink-500 cursor-pointer active:scale-95 transition-transform">
                     <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
-                        <span id="txt-fever-card-title" class="text-[9.5px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
-                        <span id="txt-fever-card-time" class="text-[7px] font-bold bg-pink-500 text-white px-1 rounded">20秒</span>
+                        <span id="txt-fever-card-title" class="text-[9px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
+                        <span id="txt-fever-card-time" class="text-[6.5px] font-bold bg-pink-500 text-white px-1 rounded">20秒</span>
                     </div>
-                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
+                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[7px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
                 </div>
 
                 <div id="card-golden" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
                     <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
-                        <span id="txt-golden-card-title" class="text-[9px] font-extrabold text-stone-700 tracking-tighter">👑 黄金キャッチャー</span>
-                        <span class="text-[7px] font-bold bg-amber-600 text-white px-1 rounded">正式版</span>
+                        <span id="txt-golden-card-title" class="text-[8.5px] font-extrabold text-stone-700 tracking-tighter">👑 黄金キャッチャー</span>
+                        <span class="text-[6.5px] font-bold bg-amber-600 text-white px-1 rounded">正式版</span>
                     </div>
-                    <div class="w-full bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
+                    <div class="w-full bg-stone-400 text-white font-extrabold text-[7px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
                 </div>
 
                 <div id="box-roomba-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
                     <div class="flex justify-between items-center w-full pointer-events-none">
-                        <span id="txt-speed-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
-                        <span class="text-[7.5px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
+                        <span id="txt-speed-card-title" class="text-[9.5px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
+                        <span class="text-[7px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
                     </div>
-                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
+                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 flex items-center justify-center pointer-events-none">
                         <span>🔒 正式版で強化可能</span>
                     </div>
                 </div>
 
                 <div id="box-roomba-battery" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
                     <div class="flex justify-between items-center w-full pointer-events-none">
-                        <span id="txt-battery-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
-                        <span class="text-[7.5px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
+                        <span id="txt-battery-card-title" class="text-[9.5px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
+                        <span class="text-[7px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
                     </div>
-                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
+                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 flex items-center justify-center pointer-events-none">
                         <span>🔒 正式版で拡張可能</span>
                     </div>
                 </div>
@@ -505,7 +516,7 @@
             </div>
         </div>
 
-        <div id="game-toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-[11px] font-bold px-4 py-2 rounded-full border border-stone-600 shadow-xl pointer-events-none opacity-0 transition-opacity duration-300 z-50"></div>
+        <div id="game-toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-[10.5px] font-bold px-3 py-1.5 rounded-full border border-stone-600 shadow-xl pointer-events-none opacity-0 transition-opacity duration-300 z-50"></div>
     </div>
 
     <script>
@@ -1155,7 +1166,7 @@
                 wizard: { name: "마법사 유령", desc: "커다란 꼬깔모자를 쓰고 신비한 마법을 부립니다." },
                 galaxy: { name: "갤럭시 유령", desc: "우주의 별들을 두른 궁극의 신출귀몰 유령." },
                 ninja: { name: "닌자 유령", desc: "어둠에 섞여 소리 없이 빠르게 이동하는 은밀 유령." },
-                pirate: { name: "해적 유령", desc: "안대를 하고 보물을 찾아 헤매는 바ダ의 사나이." },
+                pirate: { name: "해적 유령", desc: "안대를 하고 보물을 찾아 헤매는 바다의 사나이." },
                 doctor: { name: "치과의사 유령", desc: "충치를 퇴치하기 위해 거대한 칫솔을 들고 있습니다." },
                 chef: { name: "요리사 유령", desc: "특제 오므라이스를 머리에 얹은 미식가 유령." },
                 detective: { name: "명탐정 유령", desc: "돋보기로 작은 단서도 놓치지 않는 명석한 유령." },
@@ -1475,7 +1486,7 @@
             if (acc === 'beret') { ctx.fillStyle = '#4a4e69'; ctx.beginPath(); ctx.ellipse(0, -r * 0.95, r * 0.7, r * 0.28, -0.15, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -r * 1.2); ctx.lineTo(-r * 0.1, -r * 1.38); ctx.stroke(); }
             else if (acc === 'horns') { ctx.fillStyle = '#ff6b6b'; ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.85); ctx.lineTo(-r * 0.75, -r * 1.35); ctx.lineTo(-r * 0.2, -r * 1.0); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             else if (acc === 'crown') { ctx.fillStyle = '#fcc419'; ctx.beginPath(); ctx.moveTo(-r * 0.45, -r * 0.9); ctx.lineTo(-r * 0.55, -r * 1.45); ctx.lineTo(-r * 0.18, -r * 1.15); ctx.lineTo(0, -r * 1.55); ctx.lineTo(r * 0.18, -r * 1.15); ctx.lineTo(r * 0.55, -r * 1.45); ctx.lineTo(r * 0.45, -r * 0.9); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-            else if (acc === 'cat' || acc === 'ghost_cat') { ctx.fillStyle = typeObj.id === 'ghost_cat' ? '#e879f9' : '#ffb3c6'; ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.85); ctx.lineTo(-r * 0.75, -r * 1.3); ctx.lineTo(-r * 0.25, -r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            else if (acc === 'cat' || acc === 'ghost_cat') { ctx.fillStyle = typeObj.id === 'ghost_cat' ? '#e879f9' : '#ffb3c6'; ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.85); ctx.lineTo(-r * 0.75, -r * 1.3); ctx.lineTo(-r * 0.25, -r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(r * 0.5, -r * 0.85); ctx.lineTo(r * 0.75, -r * 1.3); ctx.lineTo(r * 0.25, -r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             else if (acc === 'punk') { ctx.fillStyle = '#f43f5e'; ctx.beginPath(); ctx.moveTo(0, -r * 0.85); ctx.lineTo(-r * 0.25, -r * 1.4); ctx.lineTo(0, -r * 1.25); ctx.lineTo(r * 0.25, -r * 1.4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             else if (acc === 'wizard') { ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.moveTo(-r * 0.7, -r * 0.85); ctx.lineTo(r * 0.7, -r * 0.85); ctx.lineTo(0, -r * 1.65); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             else if (acc === 'alien') { ctx.fillStyle = '#34d399'; ctx.beginPath(); ctx.moveTo(0, -r * 0.9); ctx.lineTo(0, -r * 1.4); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -r * 1.4, r*0.15, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
@@ -1591,14 +1602,14 @@
             g.isMilestone = isMilestone;
             g.isBaby = isBaby;
             
-            g.x = x ?? (isMilestone ? (cw / 2) : (40 + Math.random() * Math.max(20, cw - 80)));
-            g.y = y ?? (isMilestone ? (ch / 2) : (40 + Math.random() * Math.max(20, ch - 80)));
+            g.x = x ?? (isMilestone ? (cw / 2) : (35 + Math.random() * Math.max(20, cw - 70)));
+            g.y = y ?? (isMilestone ? (ch / 2) : (35 + Math.random() * Math.max(20, ch - 70)));
             g.vx = isMilestone ? 0 : (forceVx !== 0 ? forceVx : (Math.random() - 0.5) * 1.5);
             g.vy = isMilestone ? 0 : (forceVy !== 0 ? forceVy : (Math.random() - 0.5) * 1.5);
             g.type = typeObj; 
             g.stackCount = initialStack; 
             g.scale = isBaby ? 0.65 : (isMilestone ? 1.0 : 0.2);
-            g.radius = isBaby ? 16 : (isMilestone ? 65 : 24);
+            g.radius = isBaby ? 15 : (isMilestone ? 60 : 22);
             g.active = true; 
             g.facing = 1;
             g.img.src = generateGhostSpriteData(typeObj, true); 
@@ -2091,6 +2102,9 @@
             canvas.height = ch;
         }
         window.addEventListener('resize', resizeCanvas);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', resizeCanvas);
+        }
 
         function dismissTutorialToast() {
             const t = document.getElementById('tutorial-toast');
@@ -2223,11 +2237,11 @@
             if (state.hasRoomba) {
                 if (badge) {
                     badge.textContent = state.roombaActive ? dict.catcherActive : dict.catcherPausedBadge;
-                    badge.className = `text-[7.5px] font-bold px-1 rounded text-white ${state.roombaActive ? 'bg-emerald-600' : 'bg-stone-500'}`;
+                    badge.className = `text-[7px] font-bold px-1 rounded text-white ${state.roombaActive ? 'bg-emerald-600' : 'bg-stone-500'}`;
                 }
                 if (btnBuy) {
                     btnBuy.textContent = state.roombaActive ? dict.catcherPause : dict.catcherResume;
-                    btnBuy.className = `w-full font-extrabold text-[9px] rounded py-0.5 transition text-white shadow-sm border border-stone-800 ${state.roombaActive ? 'bg-stone-600 hover:bg-stone-700' : 'bg-emerald-600 hover:bg-emerald-700'}`;
+                    btnBuy.className = `w-full font-extrabold text-[8.5px] rounded py-0.5 transition text-white shadow-sm border border-stone-800 ${state.roombaActive ? 'bg-stone-600 hover:bg-stone-700' : 'bg-emerald-600 hover:bg-emerald-700'}`;
                 }
 
                 if (state.roombaActive) {
@@ -2242,11 +2256,11 @@
             } else {
                 if (badge) {
                     badge.textContent = dict.catcherLocked || "未解放"; 
-                    badge.className = "text-[7.5px] font-bold bg-sky-600 text-white px-1 rounded";
+                    badge.className = "text-[7px] font-bold bg-sky-600 text-white px-1 rounded";
                 }
                 if (btnBuy) {
                     btnBuy.textContent = dict.catcherFreeUnlockBtn || "【試験版】無料でアンロック";
-                    btnBuy.className = "w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9px] rounded py-0.5 shadow-sm border border-stone-800";
+                    btnBuy.className = "w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[8.5px] rounded py-0.5 shadow-sm border border-stone-800";
                 }
                 if (fastBanner) fastBanner.classList.add('hidden');
                 if (ecoBanner) ecoBanner.classList.add('hidden');
@@ -2279,16 +2293,16 @@
         }
 
         safeAddListener('tab-upgrade', 'click', () => {
-            document.getElementById('tab-upgrade').className = "flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition";
-            document.getElementById('tab-shop').className = "flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative";
+            document.getElementById('tab-upgrade').className = "flex-1 py-0.5 text-[10px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition leading-tight";
+            document.getElementById('tab-shop').className = "flex-1 py-0.5 text-[10px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative leading-tight";
             document.getElementById('panel-upgrade').classList.remove('hidden'); 
             document.getElementById('panel-shop').classList.add('hidden'); 
             document.getElementById('panel-shop').classList.remove('grid');
         });
 
         safeAddListener('tab-shop', 'click', () => {
-            document.getElementById('tab-shop').className = "flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition relative";
-            document.getElementById('tab-upgrade').className = "flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition";
+            document.getElementById('tab-shop').className = "flex-1 py-0.5 text-[10px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition relative leading-tight";
+            document.getElementById('tab-upgrade').className = "flex-1 py-0.5 text-[10px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition leading-tight";
             document.getElementById('panel-shop').classList.remove('hidden'); 
             document.getElementById('panel-shop').classList.add('grid'); 
             document.getElementById('panel-upgrade').classList.add('hidden');
@@ -2404,13 +2418,13 @@
                 const m = Math.floor(totalSec / 60);
                 const s = totalSec % 60;
                 btn.textContent = `⏳ ${m}:${s < 10 ? '0' : ''}${s}`;
-                btn.className = "w-full bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none border border-stone-500";
+                btn.className = "w-full bg-stone-400 text-white font-extrabold text-[7px] rounded py-0.5 text-center mt-auto pointer-events-none border border-stone-500";
                 card.style.opacity = "0.75";
             } else {
                 const lang = state.language || 'ja';
                 const dict = I18N[lang] || I18N.ja;
                 btn.textContent = dict.feverAdBtn || "📺 お試し発動";
-                btn.className = "w-full bg-pink-500 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none border border-pink-700";
+                btn.className = "w-full bg-pink-500 text-white font-extrabold text-[7px] rounded py-0.5 text-center mt-auto pointer-events-none border border-pink-700";
                 card.style.opacity = "1";
             }
         }
@@ -2616,7 +2630,7 @@
                 const mName = t.targetMonth !== undefined ? dict.monthNames[t.targetMonth - 1] : null;
 
                 const card = document.createElement('div');
-                card.className = `doodle-box p-2 flex flex-col justify-between items-center text-center transition-all ${
+                card.className = `doodle-box p-1.5 flex flex-col justify-between items-center text-center transition-all ${
                     unlocked ? 'bg-white' : (isReadyToUnlock ? 'bg-gradient-to-b from-amber-50 to-orange-50 border-amber-500 shadow-md' : 'bg-stone-200 opacity-90')
                 }`;
 
@@ -2624,14 +2638,14 @@
                 if (unlocked) {
                     const count = state.ghostCounts[t.id] || 0;
                     condHtml = `
-                        <p class="text-[8px] text-stone-600 leading-snug mt-0.5">${loc.desc}</p>
-                        <span class="text-[7.5px] text-stone-400 font-bold mt-0.5">${dict.dexUnlockedTotal}: ${formatAstronomicalNumber(count)} ${dict.dexUnitGhosts}</span>
+                        <p class="text-[7.5px] text-stone-600 leading-snug mt-0.5">${loc.desc}</p>
+                        <span class="text-[7px] text-stone-400 font-bold mt-0.5">${dict.dexUnlockedTotal}: ${formatAstronomicalNumber(count)} ${dict.dexUnitGhosts}</span>
                     `;
                 } else if (isReadyToUnlock) {
                     condHtml = `
                         <div class="w-full mt-1 flex flex-col items-center">
-                            <span class="text-[8px] font-extrabold text-amber-700 mb-1">${dict.dexReadyUnlock}</span>
-                            <button onclick="unlockGhostManually('${t.id}')" class="doodle-button w-full py-1 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-stone-900 font-extrabold text-[9px] rounded flex items-center justify-center gap-1 animate-pulse shadow">
+                            <span class="text-[7.5px] font-extrabold text-amber-700 mb-0.5">${dict.dexReadyUnlock}</span>
+                            <button onclick="unlockGhostManually('${t.id}')" class="doodle-button w-full py-0.5 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-stone-900 font-extrabold text-[8.5px] rounded flex items-center justify-center gap-1 animate-pulse shadow">
                                 <span>✨</span><span>${dict.dexUnlockBtn}</span>
                             </button>
                         </div>
@@ -2639,20 +2653,20 @@
                 } else if (isLogin) {
                     const diff = Math.max(0, t.reqDays - curLoginDays);
                     condHtml = `
-                        <div class="w-full bg-stone-100 rounded px-1.5 py-1 mt-0.5 text-left">
-                            <div class="text-[7.5px] font-extrabold ${isMilestoneReached ? 'text-emerald-700 font-black' : 'text-stone-700'}">
+                        <div class="w-full bg-stone-100 rounded px-1.5 py-0.5 mt-0.5 text-left">
+                            <div class="text-[7px] font-extrabold ${isMilestoneReached ? 'text-emerald-700 font-black' : 'text-stone-700'}">
                                 ${isMilestoneReached ? '✨ ' + dict.dexInRoom : `🏆 Day ${t.reqDays}`}
                             </div>
-                            <p class="text-[7px] text-stone-500 mt-0.5 leading-tight">${isMilestoneReached ? loc.desc : `+${diff} days`}</p>
+                            <p class="text-[6.5px] text-stone-500 mt-0.5 leading-tight">${isMilestoneReached ? loc.desc : `+${diff} days`}</p>
                         </div>
                     `;
                 } else if (isSpecial) {
                     condHtml = `
-                        <div class="w-full bg-stone-100 rounded px-1.5 py-1 mt-0.5 text-left">
-                            <div class="text-[7.5px] font-extrabold ${isSeasonActive ? 'text-emerald-700 font-black' : 'text-stone-600'}">
+                        <div class="w-full bg-stone-100 rounded px-1.5 py-0.5 mt-0.5 text-left">
+                            <div class="text-[7px] font-extrabold ${isSeasonActive ? 'text-emerald-700 font-black' : 'text-stone-600'}">
                                 ${isSeasonActive ? '✨ ' + dict.dexInRoom : `📅 ${dName || mName}`}
                             </div>
-                            <p class="text-[7px] text-stone-500 mt-0.5 leading-tight">${isSeasonActive ? loc.desc : '...'}</p>
+                            <p class="text-[6.5px] text-stone-500 mt-0.5 leading-tight">${isSeasonActive ? loc.desc : '...'}</p>
                         </div>
                     `;
                 } else {
@@ -2664,10 +2678,10 @@
                         const progress = Math.min(curCount, t.unlockCost);
                         const percent = Math.min(100, Math.floor((progress / t.unlockCost) * 100));
                         condHtml = `
-                            <div class="w-full bg-amber-50/80 border border-amber-300 rounded px-1.5 py-1 mt-0.5 text-left">
-                                <div class="text-[7.5px] font-extrabold text-amber-900 truncate">${dict.dexReqCondition}</div>
-                                <div class="text-[7.5px] font-bold text-stone-700 truncate">【${reqName}】× ${formatAstronomicalNumber(t.unlockCost)}</div>
-                                <div class="flex justify-between items-center text-[7px] font-bold text-stone-500 mt-0.5">
+                            <div class="w-full bg-amber-50/80 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5 text-left">
+                                <div class="text-[7px] font-extrabold text-amber-900 truncate">${dict.dexReqCondition}</div>
+                                <div class="text-[7px] font-bold text-stone-700 truncate">【${reqName}】× ${formatAstronomicalNumber(t.unlockCost)}</div>
+                                <div class="flex justify-between items-center text-[6.5px] font-bold text-stone-500 mt-0.5">
                                     <span>${dict.dexProgress} ${formatAstronomicalNumber(progress)}</span>
                                     <span class="text-amber-700">${percent}%</span>
                                 </div>
@@ -2677,31 +2691,31 @@
                             </div>
                         `;
                     } else {
-                        condHtml = `<p class="text-[8px] text-stone-500 mt-0.5">${dict.dexInitialUnlocked}</p>`;
+                        condHtml = `<p class="text-[7.5px] text-stone-500 mt-0.5">${dict.dexInitialUnlocked}</p>`;
                     }
                 }
 
                 let tagBadge = '';
                 if (isSeasonActive || isMilestoneReached) {
-                    tagBadge = `<span class="text-[7px] font-extrabold bg-emerald-500 text-white px-1 rounded animate-pulse">${dict.dexInRoom}</span>`;
+                    tagBadge = `<span class="text-[6.5px] font-extrabold bg-emerald-500 text-white px-1 rounded animate-pulse">${dict.dexInRoom}</span>`;
                 } else if (dName) {
-                    tagBadge = `<span class="text-[7px] font-extrabold bg-indigo-100 text-indigo-800 px-1 rounded">${dName}</span>`;
+                    tagBadge = `<span class="text-[6.5px] font-extrabold bg-indigo-100 text-indigo-800 px-1 rounded">${dName}</span>`;
                 } else if (mName) {
-                    tagBadge = `<span class="text-[7px] font-extrabold bg-pink-100 text-pink-800 px-1 rounded">${mName}</span>`;
+                    tagBadge = `<span class="text-[6.5px] font-extrabold bg-pink-100 text-pink-800 px-1 rounded">${mName}</span>`;
                 } else if (t.reqDays) {
-                    tagBadge = `<span class="text-[7px] font-extrabold bg-rose-100 text-rose-800 px-1 rounded">${t.reqDays}d</span>`;
+                    tagBadge = `<span class="text-[6.5px] font-extrabold bg-rose-100 text-rose-800 px-1 rounded">${t.reqDays}d</span>`;
                 }
 
                 card.innerHTML = `
                     <div class="w-full flex justify-between items-center mb-0.5 gap-0.5">
-                        <span class="font-extrabold text-[10px] text-stone-800 truncate">${unlocked ? loc.name : ((isSeasonActive || isMilestoneReached) ? loc.name : dict.unknown)}</span>
-                        <div class="flex items-center gap-1 shrink-0">
+                        <span class="font-extrabold text-[9.5px] text-stone-800 truncate">${unlocked ? loc.name : ((isSeasonActive || isMilestoneReached) ? loc.name : dict.unknown)}</span>
+                        <div class="flex items-center gap-0.5 shrink-0">
                             ${tagBadge}
-                            <span class="text-[8.5px] font-bold ${isReadyToUnlock ? 'bg-amber-300' : 'bg-amber-200'} px-1 rounded border border-stone-800">+${formatDexValue(t.value)}</span>
+                            <span class="text-[8px] font-bold ${isReadyToUnlock ? 'bg-amber-300' : 'bg-amber-200'} px-1 rounded border border-stone-800">+${formatDexValue(t.value)}</span>
                         </div>
                     </div>
-                    <div class="w-14 h-14 my-0.5 bg-[#fdfbf7] rounded-lg border border-dashed ${isReadyToUnlock ? 'border-amber-400 bg-amber-50/50' : ((isSeasonActive || isMilestoneReached) ? 'border-emerald-400 bg-emerald-50/40' : 'border-stone-300')} flex items-center justify-center overflow-hidden">
-                        <img src="${generateGhostSpriteData(t, unlocked || isSeasonActive || isMilestoneReached)}" alt="ghost" class="w-12 h-12 object-contain" />
+                    <div class="w-12 h-12 my-0.5 bg-[#fdfbf7] rounded-lg border border-dashed ${isReadyToUnlock ? 'border-amber-400 bg-amber-50/50' : ((isSeasonActive || isMilestoneReached) ? 'border-emerald-400 bg-emerald-50/40' : 'border-stone-300')} flex items-center justify-center overflow-hidden">
+                        <img src="${generateGhostSpriteData(t, unlocked || isSeasonActive || isMilestoneReached)}" alt="ghost" class="w-10 h-10 object-contain" />
                     </div>
                     ${condHtml}
                 `;
@@ -2801,9 +2815,9 @@
 
                 ctx.clearRect(0, 0, cw, ch);
                 ctx.fillStyle = '#e5e0d5';
-                for (let x = 20; x < cw; x += 28) { 
-                    for (let y = 20; y < ch; y += 28) { 
-                        ctx.beginPath(); ctx.arc(x, y, 1.5, 0, Math.PI * 2); ctx.fill(); 
+                for (let x = 18; x < cw; x += 24) { 
+                    for (let y = 18; y < ch; y += 24) { 
+                        ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill(); 
                     } 
                 }
 
@@ -2842,25 +2856,27 @@
                         if (speed > maxSpeed) { g.vx = (g.vx / speed) * maxSpeed; g.vy = (g.vy / speed) * maxSpeed; }
                         g.x += g.vx; g.y += g.vy;
                         if (Math.abs(g.vx) > 0.2) g.facing = g.vx >= 0 ? 1 : -1;
-                        const margin = g.radius + 8;
+                        const margin = g.radius + 6;
                         if (g.x < margin) { g.x = margin; g.vx *= -1; } if (g.x > cw - margin) { g.x = cw - margin; g.vx *= -1; }
                         if (g.y < margin) { g.y = margin; g.vy *= -1; } if (g.y > ch - margin) { g.y = ch - margin; g.vy *= -1; }
                     }
 
                     const stretchX = 1 + Math.sin(g.wobbleOffset) * 0.06, stretchY = 1 + Math.cos(g.wobbleOffset) * 0.06;
-                    const baseScale = g.isMilestone ? 3.0 : (g.isBaby ? 0.65 : 1.0);
-                    const stackScale = 1 + Math.min(0.25, Math.log10(Math.max(1, g.stackCount)) * 0.07);
-                    g.el.style.transform = `translate3d(${g.x - 28}px, ${g.y - 28}px, 0) scale(${g.scale * baseScale * stackScale})`;
+                    const baseScale = g.isMilestone ? 2.6 : (g.isBaby ? 0.6 : 0.95);
+                    const stackScale = 1 + Math.min(0.22, Math.log10(Math.max(1, g.stackCount)) * 0.06);
+                    g.el.style.transform = `translate3d(${g.x - 26}px, ${g.y - 26}px, 0) scale(${g.scale * baseScale * stackScale})`;
                     g.img.style.transform = `scale(${stretchX * g.facing}, ${stretchY})`;
                 }
 
                 if (state.hasRoomba && state.roombaActive) {
                     const rb = state.roombaObj;
-                    const powerRadius = 38;
+                    const powerRadius = 36;
 
                     rb.x += rb.vx; rb.y += rb.vy;
-                    if (rb.x < powerRadius || rb.x > cw - powerRadius) rb.vx *= -1;
-                    if (rb.y < powerRadius || rb.y > ch - powerRadius) rb.vy *= -1;
+                    if (rb.x < powerRadius) { rb.x = powerRadius; rb.vx = Math.abs(rb.vx); }
+                    if (rb.x > cw - powerRadius) { rb.x = cw - powerRadius; rb.vx = -Math.abs(rb.vx); }
+                    if (rb.y < powerRadius) { rb.y = powerRadius; rb.vy = Math.abs(rb.vy); }
+                    if (rb.y > ch - powerRadius) { rb.y = ch - powerRadius; rb.vy = -Math.abs(rb.vy); }
 
                     ctx.save();
                     ctx.translate(rb.x, rb.y);
@@ -2869,10 +2885,10 @@
                     ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.strokeStyle = '#10b981'; ctx.stroke();
 
                     ctx.setLineDash([]);
-                    ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2);
+                    ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2);
                     ctx.fillStyle = '#10b981'; ctx.fill();
-                    ctx.lineWidth = 3; ctx.strokeStyle = '#2d2d2d'; ctx.stroke();
-                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
+                    ctx.lineWidth = 2.5; ctx.strokeStyle = '#2d2d2d'; ctx.stroke();
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8.5px sans-serif'; ctx.textAlign = 'center';
                     ctx.fillText('⚡FAST', 0, 3);
                     ctx.restore();
 
@@ -2904,7 +2920,7 @@
 
                 if (state.floatingTexts.length > 0) {
                     ctx.save();
-                    ctx.font = '800 13px "M PLUS Rounded 1c", sans-serif';
+                    ctx.font = '800 12px "M PLUS Rounded 1c", sans-serif';
                     ctx.textAlign = 'center';
                     for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
                         const ft = state.floatingTexts[i]; ft.y += ft.vy; ft.alpha -= 0.03;
