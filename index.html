@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ポップゴースト！ - ゆるかわ出現放置ゲーム (Web試験版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>時々
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         * {
@@ -19,14 +19,13 @@
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100dvh; /* モバイルブラウザの上下バーを考慮した高さ */
+            height: 100dvh;
             overflow: hidden;
             background-color: #1c1917;
         }
         #game-app {
             height: 100dvh !important;
             max-height: 100dvh !important;
-            zoom: 1 !important; /* ズームは解除して自動フィットを活用 */
         }
         .doodle-box {
             background: #ffffff;
@@ -113,30 +112,6 @@
             border: 1px solid #2d2d2d;
             white-space: nowrap;
         }
-        .dev-input {
-            background: #292524;
-            border: 1px solid #57534e;
-            color: #f5f5f4;
-            font-size: 11px;
-            padding: 4px 6px;
-            border-radius: 6px;
-            width: 100%;
-            outline: none;
-        }
-        .dev-btn {
-            background: #44403c;
-            color: #f5f5f4;
-            border: 1px solid #78716c;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 4px 6px;
-            cursor: pointer;
-            transition: background 0.1s;
-        }
-        .dev-btn:hover { background: #57534e; }
-        .dev-btn-primary { background: #0284c7; border-color: #38bdf8; color: white; }
-        .dev-btn-danger { background: #991b1b; border-color: #ef4444; color: white; }
 
         input[type="number"].no-spinners::-webkit-outer-spin-button,
         input[type="number"].no-spinners::-webkit-inner-spin-button {
@@ -152,49 +127,51 @@
 
     <div id="game-app" class="flex flex-col h-[100dvh] w-full max-w-md bg-[#fdfbf7] relative shadow-2xl border-x-2 border-stone-800 shrink-0 z-10 overflow-hidden">
         <!-- ヘッダー -->
-        <header class="z-20 px-3 py-2 bg-[#fdfbf7]/95 backdrop-blur-sm border-b-2 border-dashed border-stone-300 flex flex-col gap-1.5">
-            <div class="doodle-box px-3 py-1.5 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl animate-pulse">👻</span>
+        <header class="z-20 px-2.5 py-1.5 bg-[#fdfbf7]/95 backdrop-blur-sm border-b-2 border-dashed border-stone-300 flex flex-col gap-1 shrink-0">
+            <div class="doodle-box px-2.5 py-1 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xl animate-pulse">👻</span>
                     <div>
-                        <div id="txt-score-title" class="text-[9px] font-bold text-stone-500 tracking-wider">総獲得おばけ玉</div>
-                        <div id="score-display" class="text-xl font-extrabold text-stone-900 tracking-tight leading-none overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-[240px]">0</div>
+                        <div id="txt-score-title" class="text-[8.5px] font-bold text-stone-500 tracking-wider">総獲得おばけ玉</div>
+                        <div id="score-display" class="text-lg font-extrabold text-stone-900 tracking-tight leading-none overflow-x-auto no-scrollbar max-w-[170px] sm:max-w-[210px]">0</div>
                     </div>
                 </div>
                 <div class="text-right shrink-0">
                     <div id="txt-density-title" class="text-[8px] font-bold text-stone-500">おへや密度</div>
-                    <div id="count-display" class="text-[11px] font-extrabold text-stone-800">0 / 100</div>
+                    <div id="count-display" class="text-[10px] font-extrabold text-stone-800">0 / 100</div>
                 </div>
             </div>
 
-            <!-- コントロールバー -->
-            <div class="flex justify-between items-center gap-1.5">
-                <div class="w-full h-2.5 bg-stone-200 rounded-full overflow-hidden border border-stone-800 flex-1 relative">
+            <!-- コントロールバー（見切れ防止） -->
+            <div class="flex justify-between items-center gap-1">
+                <div class="h-2 bg-stone-200 rounded-full overflow-hidden border border-stone-800 flex-1 relative min-w-[40px]">
                     <div id="capacity-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-200" style="width: 0%;"></div>
                 </div>
 
-                <button id="btn-login-info" class="doodle-button px-2 py-0.5 bg-rose-100 text-stone-800 font-extrabold text-[9px] flex items-center gap-1 shrink-0">
+                <button id="btn-login-info" class="doodle-button px-1.5 py-0.5 bg-rose-100 text-stone-800 font-extrabold text-[8px] flex items-center gap-0.5 shrink-0">
                     <span>🏆</span><span id="header-login-days-txt">通算 1日目</span>
                 </button>
 
-                <button id="btn-settings" class="doodle-button px-2 py-0.5 bg-lime-100 text-stone-800 font-bold text-[9px] flex items-center gap-1 shrink-0">
+                <button id="btn-settings" class="doodle-button px-1.5 py-0.5 bg-lime-100 text-stone-800 font-bold text-[8px] flex items-center gap-0.5 shrink-0">
                     <span>⚙️</span><span id="txt-settings-btn">設定</span>
                 </button>
 
-                <button id="btn-dex" class="doodle-button px-2.5 py-0.5 bg-amber-100 text-stone-800 font-bold text-[9px] flex items-center gap-1 relative shrink-0">
+                <button id="btn-dex" class="doodle-button px-1.5 py-0.5 bg-amber-100 text-stone-800 font-bold text-[8px] flex items-center gap-0.5 relative shrink-0">
                     <span>📖</span><span id="txt-dex-btn">図鑑</span>
-                    <span id="dex-notify-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-white shadow hidden animate-bounce">!</span>
+                    <span id="dex-notify-badge" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[8px] font-extrabold w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white shadow hidden animate-bounce">!</span>
                     <span id="save-indicator" class="absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[6px] px-1 rounded-full opacity-0 transition-opacity duration-300">保存</span>
                 </button>
             </div>
         </header>
-        <main id="canvas-container" class="flex-1 relative overflow-hidden cursor-pointer bg-[#fdfbf7] touch-none">
-            <div id="fast-battery-banner" class="absolute top-2 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center animate-pulse">
+
+        <!-- メイン画面（お部屋） -->
+        <main id="canvas-container" class="flex-1 relative overflow-hidden cursor-pointer bg-[#fdfbf7] touch-none min-h-0">
+            <div id="fast-battery-banner" class="absolute top-2 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[9.5px] font-extrabold px-3 py-1.5 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center animate-pulse">
                 <span>⚡ <b id="txt-banner-fast-title">強力バッテリー稼働中！</b></span>
                 <span class="bg-white/20 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold">🔋<span id="txt-banner-fast-label">放置枠</span> <span id="fast-battery-timer-txt">2h</span></span>
             </div>
 
-            <div id="eco-battery-banner" class="absolute top-2 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] bg-stone-700 text-amber-200 text-[9.5px] font-extrabold px-3 py-1 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center">
+            <div id="eco-battery-banner" class="absolute top-2 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] bg-stone-700 text-amber-200 text-[9px] font-extrabold px-3 py-1 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center cursor-pointer pointer-events-auto">
                 <span>🍃 <b id="txt-banner-eco-title">キャッチャー一時停止中</b></span>
                 <span id="txt-banner-eco-sub" class="text-stone-300 text-[8px]">タップで再開</span>
             </div>
@@ -202,324 +179,121 @@
             <canvas id="gameCanvas" class="absolute inset-0 block w-full h-full pointer-events-none z-0"></canvas>
             <div id="ghost-playground" class="absolute inset-0 z-10 pointer-events-none overflow-hidden"></div>
 
-            <div id="tutorial-toast" class="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 bg-stone-800/85 text-white text-[10px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap transition-opacity duration-500 z-30 shadow-md">
+            <div id="tutorial-toast" class="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 bg-stone-800/85 text-white text-[9.5px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap transition-opacity duration-500 z-30 shadow-md">
                 👆 指でなぞっておばけを吸い込もう！
             </div>
         </main>
+
+        <!-- フッター（単一・スリム化・完全一体型） -->
         <footer class="z-20 bg-[#f5f0e6] border-t-2 border-stone-800 px-2 py-1.5 shrink-0">
             <div class="flex gap-1.5 mb-1">
-                <button id="tab-upgrade" class="flex-1 py-0.5 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
-                    🛠️ <span id="txt-tab-upgrade">育成・強化</span>
-                </button>
-                <button id="tab-shop" class="flex-1 py-0.5 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative">
-                    💎 <span id="txt-tab-shop">キャッチャー</span>
-                </button>
-            </div>
-
-            <!-- 育成強化パネル -->
-            <div id="panel-upgrade" class="grid grid-cols-2 gap-1">
-                <button id="upg-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-speed-name" class="text-[10px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
-                        <span id="lvl-speed" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full">
-                        <div id="txt-upg-speed-desc" class="text-[7px] text-stone-500 font-medium truncate">湧く間隔短縮</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-speed">15</span></div>
-                    </div>
-                </button>
-
-                <button id="upg-cap" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-cap-name" class="text-[10px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
-                        <span id="lvl-cap" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full">
-                        <div id="txt-upg-cap-desc" class="text-[7px] text-stone-500 font-medium truncate">上限UP</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-cap">30</span></div>
-                    </div>
-                </button>
-
-                <button id="upg-rare" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-rare-name" class="text-[10px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
-                        <span id="lvl-rare" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full">
-                        <div id="txt-upg-rare-desc" class="text-[7px] text-stone-500 font-medium truncate">レア出現率UP</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-rare">50</span></div>
-                    </div>
-                </button>
-
-                <button id="upg-magnet" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-magnet-name" class="text-[10px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
-                        <span id="lvl-magnet" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full">
-                        <div id="txt-upg-magnet-desc" class="text-[7px] text-stone-500 font-medium truncate">範囲拡大</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-magnet">40</span></div>
-                    </div>
-                </button>
-            </div>
-
-            <!-- キャッチャー管理パネル -->
-            <div id="panel-shop" class="hidden grid-cols-2 gap-1">
-                <div class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-cyan-50 to-blue-50 border-sky-600 col-span-2 sm:col-span-1">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-catcher-card-title" class="text-[10px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
-                        <span id="roomba-badge" class="text-[7.5px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
-                    </div>
-                    <div class="flex gap-1 mt-0.5">
-                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9px] rounded py-0.5 shadow-sm transition">
-                            【試験版】無料でアンロック
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="card-fever" class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-pink-50 to-red-50 border-pink-500 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
-                        <span id="txt-fever-card-title" class="text-[9.5px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
-                        <span id="txt-fever-card-time" class="text-[7px] font-bold bg-pink-500 text-white px-1 rounded">20秒</span>
-                    </div>
-                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
-                </div>
-
-                <div id="card-golden" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
-                        <span id="txt-golden-card-title" class="text-[9px] font-extrabold text-stone-700 tracking-tighter">👑 黄金キャッチャー</span>
-                        <span class="text-[7px] font-bold bg-amber-600 text-white px-1 rounded">正式版</span>
-                    </div>
-                    <div class="w-full bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
-                </div>
-
-                <div id="box-roomba-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full pointer-events-none">
-                        <span id="txt-speed-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
-                        <span class="text-[7.5px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
-                    </div>
-                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
-                        <span>🔒 正式版で強化可能</span>
-                    </div>
-                </div>
-
-                <div id="box-roomba-battery" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full pointer-events-none">
-                        <span id="txt-battery-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
-                        <span class="text-[7.5px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
-                    </div>
-                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
-                        <span>🔒 正式版で拡張可能</span>
-                    </div>
-                </div>
-            </div>
-        </footer> border-t-2 border-stone-800 px-2 py-1.5 shrink-0">
-            <div class="flex gap-1.5 mb-1">
-                <button id="tab-upgrade" class="flex-1 py-0.5 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
-                    🛠️ <span id="txt-tab-upgrade">育成・強化</span>
-                </button>
-                <button id="tab-shop" class="flex-1 py-0.5 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative">
-                    💎 <span id="txt-tab-shop">キャッチャー</span>
-                </button>
-            </div>
-
-            <!-- 育成強化パネル -->
-            <div id="panel-upgrade" class="grid grid-cols-2 gap-1">
-                <button id="upg-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-speed-name" class="text-[10px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
-                        <span id="lvl-speed" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full">
-                        <div id="txt-upg-speed-desc" class="text-[7px] text-stone-500 font-medium truncate">湧く間隔短縮</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-speed">15</span></div>
-                    </div>
-                </button>
-
-                <button id="upg-cap" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-cap-name" class="text-[10px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
-                        <span id="lvl-cap" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full">
-                        <div id="txt-upg-cap-desc" class="text-[7px] text-stone-500 font-medium truncate">上限UP</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-cap">30</span></div>
-                    </div>
-                </button>
-
-                <button id="upg-rare" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-rare-name" class="text-[10px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
-                        <span id="lvl-rare" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full">
-                        <div id="txt-upg-rare-desc" class="text-[7px] text-stone-500 font-medium truncate">レア出現率UP</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-rare">50</span></div>
-                    </div>
-                </button>
-
-                <button id="upg-magnet" class="doodle-button p-1 text-left flex flex-col justify-between bg-white">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-magnet-name" class="text-[10px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
-                        <span id="lvl-magnet" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
-                    </div>
-                    <div class="flex justify-between items-center w-full">
-                        <div id="txt-upg-magnet-desc" class="text-[7px] text-stone-500 font-medium truncate">範囲拡大</div>
-                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-magnet">40</span></div>
-                    </div>
-                </button>
-            </div>
-
-            <!-- キャッチャー管理パネル -->
-            <div id="panel-shop" class="hidden grid-cols-2 gap-1">
-                <div class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-cyan-50 to-blue-50 border-sky-600 col-span-2 sm:col-span-1">
-                    <div class="flex justify-between items-center w-full">
-                        <span id="txt-catcher-card-title" class="text-[10px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
-                        <span id="roomba-badge" class="text-[7.5px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
-                    </div>
-                    <div class="flex gap-1 mt-0.5">
-                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9px] rounded py-0.5 shadow-sm transition">
-                            【試験版】無料でアンロック
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="card-fever" class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-pink-50 to-red-50 border-pink-500 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
-                        <span id="txt-fever-card-title" class="text-[9.5px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
-                        <span id="txt-fever-card-time" class="text-[7px] font-bold bg-pink-500 text-white px-1 rounded">20秒</span>
-                    </div>
-                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
-                </div>
-
-                <div id="card-golden" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
-                        <span id="txt-golden-card-title" class="text-[9px] font-extrabold text-stone-700 tracking-tighter">👑 黄金キャッチャー</span>
-                        <span class="text-[7px] font-bold bg-amber-600 text-white px-1 rounded">正式版</span>
-                    </div>
-                    <div class="w-full bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
-                </div>
-
-                <div id="box-roomba-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full pointer-events-none">
-                        <span id="txt-speed-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
-                        <span class="text-[7.5px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
-                    </div>
-                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
-                        <span>🔒 正式版で強化可能</span>
-                    </div>
-                </div>
-
-                <div id="box-roomba-battery" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full pointer-events-none">
-                        <span id="txt-battery-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
-                        <span class="text-[7.5px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
-                    </div>
-                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
-                        <span>🔒 正式版で拡張可能</span>
-                    </div>
-                </div>
-            </div>
-        </footer> border-t-2 border-stone-800 px-2 py-2">
-            <div class="flex gap-1.5 mb-1.5">
-                <button id="tab-upgrade" class="flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
+                <button id="tab-upgrade" class="flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition">
                     🛠️ 育成・強化
                 </button>
-                <button id="tab-shop" class="flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative">
+                <button id="tab-shop" class="flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative">
                     💎 キャッチャー
                 </button>
             </div>
 
             <!-- 育成強化パネル -->
-            <div id="panel-upgrade" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto no-scrollbar">
-                <button id="upg-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+            <div id="panel-upgrade" class="grid grid-cols-2 gap-1">
+                <button id="upg-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-white min-h-[50px]">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-speed-name" class="text-[11px] font-extrabold text-stone-800">⚡ 出現スピード</span>
-                        <span id="lvl-speed" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                        <span id="txt-upg-speed-name" class="text-[10px] font-extrabold text-stone-800 truncate">⚡ 出現スピード</span>
+                        <span id="lvl-speed" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div id="txt-upg-speed-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">湧く間隔が短縮＆<br>一度にドバッと出現！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-speed">15</span></div>
+                    <div class="flex justify-between items-center w-full mt-0.5">
+                        <div id="txt-upg-speed-desc" class="text-[7px] text-stone-500 font-medium truncate">湧く間隔短縮</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-speed">15</span></div>
+                    </div>
                 </button>
 
-                <button id="upg-cap" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                <button id="upg-cap" class="doodle-button p-1 text-left flex flex-col justify-between bg-white min-h-[50px]">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-cap-name" class="text-[11px] font-extrabold text-stone-800">🏠 おへや拡張</span>
-                        <span id="lvl-cap" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                        <span id="txt-upg-cap-name" class="text-[10px] font-extrabold text-stone-800 truncate">🏠 おへや拡張</span>
+                        <span id="lvl-cap" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div id="txt-upg-cap-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">おへやに溜められる<br>おばけの上限UP！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-cap">30</span></div>
+                    <div class="flex justify-between items-center w-full mt-0.5">
+                        <div id="txt-upg-cap-desc" class="text-[7px] text-stone-500 font-medium truncate">上限UP</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-cap">30</span></div>
+                    </div>
                 </button>
 
-                <button id="upg-rare" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                <button id="upg-rare" class="doodle-button p-1 text-left flex flex-col justify-between bg-white min-h-[50px]">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-rare-name" class="text-[11px] font-extrabold text-stone-800">🌈 突然変異率</span>
-                        <span id="lvl-rare" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                        <span id="txt-upg-rare-name" class="text-[10px] font-extrabold text-stone-800 truncate">🌈 突然変異率</span>
+                        <span id="lvl-rare" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div id="txt-upg-rare-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">高額なレア＆珍種<br>おばけの出現率UP！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-rare">50</span></div>
+                    <div class="flex justify-between items-center w-full mt-0.5">
+                        <div id="txt-upg-rare-desc" class="text-[7px] text-stone-500 font-medium truncate">レア出現率UP</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-rare">50</span></div>
+                    </div>
                 </button>
 
-                <button id="upg-magnet" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-white">
+                <button id="upg-magnet" class="doodle-button p-1 text-left flex flex-col justify-between bg-white min-h-[50px]">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-upg-magnet-name" class="text-[11px] font-extrabold text-stone-800">🧲 吸引パワー</span>
-                        <span id="lvl-magnet" class="text-[9px] font-bold bg-stone-200 px-1 rounded">Lv.1</span>
+                        <span id="txt-upg-magnet-name" class="text-[10px] font-extrabold text-stone-800 truncate">🧲 吸引パワー</span>
+                        <span id="lvl-magnet" class="text-[8px] font-bold bg-stone-200 px-1 rounded shrink-0">Lv.1</span>
                     </div>
-                    <div id="txt-upg-magnet-desc" class="text-[8px] text-stone-500 font-medium leading-tight mt-0.5">指でなぞった時の<br>吸い込み範囲が拡大！</div>
-                    <div class="text-[9px] font-bold text-amber-600 mt-1">👻 <span id="cost-magnet">40</span></div>
+                    <div class="flex justify-between items-center w-full mt-0.5">
+                        <div id="txt-upg-magnet-desc" class="text-[7px] text-stone-500 font-medium truncate">範囲拡大</div>
+                        <div class="text-[8.5px] font-bold text-amber-600 shrink-0">👻 <span id="cost-magnet">40</span></div>
+                    </div>
                 </button>
             </div>
 
             <!-- キャッチャー管理パネル -->
-            <div id="panel-shop" class="hidden grid-cols-2 gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
-                <div class="doodle-button p-1.5 text-left flex flex-col justify-between bg-gradient-to-br from-cyan-50 to-blue-50 border-sky-600 col-span-2 sm:col-span-1">
+            <div id="panel-shop" class="hidden grid-cols-2 gap-1">
+                <div class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-cyan-50 to-blue-50 border-sky-600 col-span-2 sm:col-span-1">
                     <div class="flex justify-between items-center w-full">
-                        <span id="txt-catcher-card-title" class="text-[11px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
-                        <span id="roomba-badge" class="text-[8px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
+                        <span id="txt-catcher-card-title" class="text-[10px] font-extrabold text-sky-900 pr-1 truncate">🤖 おばけキャッチャー</span>
+                        <span id="roomba-badge" class="text-[7.5px] font-bold bg-sky-600 text-white px-1 rounded shrink-0">試験版</span>
                     </div>
-                    <div class="flex gap-1 mt-1">
-                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9.5px] rounded py-1 shadow-sm transition">
+                    <div class="flex gap-1 mt-0.5">
+                        <button id="btn-buy-roomba" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9px] rounded py-0.5 shadow-sm transition">
                             【試験版】無料でアンロック
                         </button>
                     </div>
                 </div>
                 
                 <div id="card-fever" class="doodle-button p-1 text-left flex flex-col justify-between bg-gradient-to-br from-pink-50 to-red-50 border-pink-500 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full mb-1 pointer-events-none">
-                        <span id="txt-fever-card-title" class="text-[10px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
+                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
+                        <span id="txt-fever-card-title" class="text-[9.5px] font-extrabold text-pink-900 tracking-tighter">🔥 フィーバー</span>
                         <span id="txt-fever-card-time" class="text-[7px] font-bold bg-pink-500 text-white px-1 rounded">20秒</span>
                     </div>
-                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[8px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
+                    <div id="txt-fever-card-btn" class="w-full bg-pink-500 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">📺 お試し発動</div>
                 </div>
 
                 <div id="card-golden" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
-                    <div class="flex justify-between items-center w-full mb-1 pointer-events-none">
+                    <div class="flex justify-between items-center w-full mb-0.5 pointer-events-none">
                         <span id="txt-golden-card-title" class="text-[9px] font-extrabold text-stone-700 tracking-tighter">👑 黄金キャッチャー</span>
                         <span class="text-[7px] font-bold bg-amber-600 text-white px-1 rounded">正式版</span>
                     </div>
-                    <div class="w-full bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
+                    <div class="w-full bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none">🔒 正式版で登場</div>
                 </div>
 
-                <div id="box-roomba-speed" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                <div id="box-roomba-speed" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
                     <div class="flex justify-between items-center w-full pointer-events-none">
-                        <span id="txt-speed-card-title" class="text-[11px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
-                        <span class="text-[8px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
+                        <span id="txt-speed-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🌀 吸引力</span>
+                        <span class="text-[7.5px] font-bold bg-indigo-600 text-white px-1 rounded">正式版</span>
                     </div>
-                    <div class="w-full mt-1 bg-stone-400 text-white font-extrabold text-[9px] rounded py-1 flex items-center justify-center px-2 pointer-events-none">
+                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
                         <span>🔒 正式版で強化可能</span>
                     </div>
                 </div>
 
-                <div id="box-roomba-battery" class="doodle-button p-1.5 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
+                <div id="box-roomba-battery" class="doodle-button p-1 text-left flex flex-col justify-between bg-stone-100 border-stone-400 opacity-75 cursor-pointer active:scale-95 transition-transform">
                     <div class="flex justify-between items-center w-full pointer-events-none">
-                        <span id="txt-battery-card-title" class="text-[11px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
-                        <span class="text-[8px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
+                        <span id="txt-battery-card-title" class="text-[10px] font-extrabold text-stone-700 truncate">🔋 強力バッテリー</span>
+                        <span class="text-[7.5px] font-bold bg-emerald-600 text-white px-1 rounded">正式版</span>
                     </div>
-                    <div class="w-full mt-1 bg-stone-400 text-white font-extrabold text-[9px] rounded py-1 flex items-center justify-center px-2 pointer-events-none">
+                    <div class="w-full mt-0.5 bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 flex items-center justify-center pointer-events-none">
                         <span>🔒 正式版で拡張可能</span>
                     </div>
                 </div>
             </div>
         </footer>
+
         <!-- 設定モーダル -->
         <div id="modal-settings" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
             <div class="doodle-box w-full max-w-xs p-4 bg-[#fdfbf7] flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
@@ -612,9 +386,9 @@
         <div id="modal-purchase-confirm" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4">
             <div class="doodle-box w-full max-w-sm p-4 bg-[#fdfbf7] flex flex-col items-center text-center">
                 <div class="text-4xl mb-1">🤖</div>
-                <h2 class="text-base font-extrabold text-stone-900 mb-1">おばけキャッチャー</h2>
-                <div class="text-sm font-black text-emerald-600 mb-2">【試験プレイ版：無料】</div>
-                <div class="text-[11px] text-stone-700 leading-relaxed mb-4 w-full bg-stone-100 border border-stone-300 rounded p-2.5 text-left">
+                <h2 class="text-base font-extrabold text-stone-900 mb-1" id="txt-modal-catcher-title">おばけキャッチャー</h2>
+                <div class="text-sm font-black text-emerald-600 mb-2" id="txt-modal-catcher-sub">【試験プレイ版：無料】</div>
+                <div class="text-[11px] text-stone-700 leading-relaxed mb-4 w-full bg-stone-100 border border-stone-300 rounded p-2.5 text-left" id="txt-modal-catcher-desc">
                     <p class="font-bold text-sky-900 mb-1">【試験版限定：無料お試し体験】</p>
                     ・お部屋を自律走行して自動でおばけを吸い込みます！<br>
                     ・アプリを閉じている間もオフライン自動回収！<br>
@@ -624,7 +398,7 @@
                     <button id="btn-purchase-cancel" class="doodle-button flex-1 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 font-extrabold text-xs">
                         閉じる
                     </button>
-                    <button id="btn-purchase-execute" class="doodle-button flex-1 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-xs shadow-md">
+                    <button id="btn-purchase-execute" class="doodle-button flex-1 py-2 font-extrabold text-xs shadow-md" style="background-color: #0284c7 !important; color: #ffffff !important; border: 2px solid #2d2d2d;">
                         無料でアンロック
                     </button>
                 </div>
@@ -635,9 +409,9 @@
         <div id="modal-fever-confirm" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4">
             <div class="doodle-box w-full max-w-sm p-4 bg-[#fdfbf7] flex flex-col items-center text-center">
                 <div class="text-4xl mb-1">🔥✨</div>
-                <h2 class="text-base font-extrabold text-stone-900 mb-1">フィーバータイム発動</h2>
-                <div class="text-xs font-bold text-rose-500 mb-2">20秒間 お祭り無双タイム！</div>
-                <div class="text-[11px] text-stone-700 leading-relaxed mb-4 w-full bg-stone-100 border border-stone-300 rounded p-2.5 text-left">
+                <h2 class="text-base font-extrabold text-stone-900 mb-1" id="txt-modal-fever-title">フィーバータイム発動</h2>
+                <div class="text-xs font-bold text-rose-500 mb-2" id="txt-modal-fever-sub">20秒間 お祭り無双タイム！</div>
+                <div class="text-[11px] text-stone-700 leading-relaxed mb-4 w-full bg-stone-100 border border-stone-300 rounded p-2.5 text-left" id="txt-modal-fever-desc">
                     <p class="font-bold text-rose-900 mb-1">【フィーバー効果】</p>
                     ・吸い込んだおばけが<b>2匹のこおばけに分裂！</b><br>
                     ・出現スピードが<b>超絶UP！</b><br>
@@ -648,7 +422,7 @@
                     <button id="btn-fever-cancel" class="doodle-button flex-1 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 font-extrabold text-xs">
                         やめる
                     </button>
-                    <button id="btn-fever-execute" class="doodle-button flex-1 py-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-extrabold text-xs shadow-md">
+                    <button id="btn-fever-execute" class="doodle-button flex-1 py-2 font-extrabold text-xs shadow-md" style="background-color: #e11d48 !important; color: #ffffff !important; border: 2px solid #2d2d2d;">
                         今すぐ発動！
                     </button>
                 </div>
@@ -739,11 +513,11 @@
         const MAX_POOL_SIZE = 100;
         const MAX_UPGRADE_LEVEL = 99;
 
-        // UIバッチ更新＆過負荷防止フラグ
         let isUiDirty = false;
         let lastPopSoundTime = 0;
         let lastAppliedBpm = 104;
         let lastAutoSaveTime = Date.now();
+        let toastTimerId = null;
 
         function safeAddListener(id, event, handler) {
             const el = document.getElementById(id);
@@ -753,6 +527,16 @@
         function formatAstronomicalNumber(num) {
             if (num === null || num === undefined || isNaN(num)) return "0";
             if (num === Infinity) return "MAX";
+            const lang = state.language || 'ja';
+
+            if (lang === 'en') {
+                if (num < 1000) return Math.floor(num).toString();
+                const enUnits = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+                let i = 0; let n = num;
+                while (n >= 1000 && i < enUnits.length - 1) { n /= 1000; i++; }
+                return (n >= 100 ? n.toFixed(1) : n.toFixed(2)) + enUnits[i];
+            }
+
             if (num < 10000) return Math.floor(num).toLocaleString();
             const units = ['', '万', '億', '兆', '京', '垓', '秭', '穣', '溝', '澗', '正', '載', '極', '恒河沙', '阿僧祇', '那由他', '不可思議', '無量大数'];
             let i = 0; let n = num;
@@ -769,6 +553,12 @@
             const h = Math.floor(sec / 3600);
             const m = Math.floor((sec % 3600) / 60);
             const s = sec % 60;
+            const lang = state.language || 'ja';
+            if (lang === 'en') {
+                if (h > 0) return `${h}h ${m}m ${s}s`;
+                if (m > 0) return `${m}m ${s}s`;
+                return `${s}s`;
+            }
             if (h > 0) return `${h}時間${m}分${s}秒`;
             if (m > 0) return `${m}分${s}秒`;
             return `${s}秒`;
@@ -777,9 +567,13 @@
         function showGameToast(msg) {
             const toast = document.getElementById('game-toast');
             if (!toast) return;
+            if (toastTimerId) clearTimeout(toastTimerId);
             toast.textContent = msg;
             toast.style.opacity = '1';
-            setTimeout(() => { toast.style.opacity = '0'; }, 2400);
+            toastTimerId = setTimeout(() => { 
+                toast.style.opacity = '0'; 
+                toastTimerId = null;
+            }, 2400);
         }
 
         function getDailyCycleDate(date = new Date()) {
@@ -797,6 +591,7 @@
         function getCurrentMonth() {
             return simulatedMonth >= 1 ? simulatedMonth : (new Date().getMonth() + 1);
         }
+
         // 通常おばけ 30種
         const REGULAR_GHOST_TYPES = [
             { id: 'normal', name: 'すっぴんおばけ', desc: 'どこにでもいる素朴なおばけ ほっぺがほんのりピンク', value: 1, weight: 100, color: '#ffffff', cheek: '#ffb3ba', accessory: null, pitch: 'C5', unlockCost: 0, requireType: null },
@@ -871,6 +666,7 @@
 
         const ALL_GHOSTS = [...REGULAR_GHOST_TYPES, ...WEEKDAY_GHOST_TYPES, ...MONTH_GHOST_TYPES, ...MILESTONE_GHOST_TYPES];
         const GHOST_TYPES = ALL_GHOSTS;
+
         const state = {
             score: 0,
             ghostCounts: {},
@@ -892,9 +688,6 @@
             lastBatteryResetCycle: "",
             lvlRoombaSpeed: 1, 
             lvlRoombaBattery: 1,
-            catcherCombo: 0,
-            catcherComboTimer: 0,
-            catcherComboMultiplier: 1.0,
             roombaObj: { x: 150, y: 150, vx: 2.2, vy: 2.0, radius: 34 },
             spawnAccumulatorMs: 0,
             lastTickTime: Date.now(),
@@ -911,7 +704,9 @@
             lastLoginCycle: "",
             claimedMilestones: {}
         };
+
         ALL_GHOSTS.forEach(t => { if (state.ghostCounts[t.id] === undefined) state.ghostCounts[t.id] = 0; });
+
         const I18N = {
             ja: {
                 scoreTitle: "総獲得おばけ玉",
@@ -928,13 +723,13 @@
                 seTitle: "効果音 (SE)",
                 doneBtn: "完了",
                 upgSpeedName: "⚡ 出現スピード",
-                upgSpeedDesc: "湧く間隔が短縮＆<br>一度にドバッと出現！",
+                upgSpeedDesc: "湧く間隔短縮",
                 upgCapName: "🏠 おへや拡張",
-                upgCapDesc: "おへやに溜められる<br>おばけの上限UP！",
+                upgCapDesc: "上限UP",
                 upgRareName: "🌈 突然変異率",
-                upgRareDesc: "高額なレア＆珍種<br>おばけの出現率UP！",
+                upgRareDesc: "レア出現率UP",
                 upgMagName: "🧲 吸引パワー",
-                upgMagDesc: "指でなぞった時の<br>吸い込み範囲が拡大！",
+                upgMagDesc: "範囲拡大",
                 catcherTitle: "🤖 おばけキャッチャー",
                 catcherFreeUnlockBtn: "無料でアンロック",
                 feverStartBtn: "今すぐ発動！",
@@ -1007,13 +802,13 @@
                 seTitle: "Sound FX (SE)",
                 doneBtn: "Done",
                 upgSpeedName: "⚡ Spawn Speed",
-                upgSpeedDesc: "Faster spawn rate &<br>spawns in larger bursts!",
-                upgCapName: "🏠 Room Capacity",
-                upgCapDesc: "Increase max number of<br>ghosts in the room!",
+                upgSpeedDesc: "Faster Spawns",
+                upgCapName: "🏠 Room Cap",
+                upgCapDesc: "Max Capacity UP",
                 upgRareName: "🌈 Mutation Rate",
-                upgRareDesc: "Higher chance for rare<br>and high-value ghosts!",
+                upgRareDesc: "More Rare Ghosts",
                 upgMagName: "🧲 Vacuum Power",
-                upgMagDesc: "Wider absorption area<br>when swiping!",
+                upgMagDesc: "Wider Range",
                 catcherTitle: "🤖 Ghost Catcher",
                 catcherFreeUnlockBtn: "Free Unlock",
                 feverStartBtn: "Activate Now!",
@@ -1086,13 +881,13 @@
                 seTitle: "音效 (SE)",
                 doneBtn: "完成",
                 upgSpeedName: "⚡ 出没速度",
-                upgSpeedDesc: "缩短产生间隔＆<br>一次涌现更多幽灵！",
+                upgSpeedDesc: "缩短出现间隔",
                 upgCapName: "🏠 房间扩充",
-                upgCapDesc: "提升房间内可容纳的<br>幽灵数量上限！",
+                upgCapDesc: "容量提升",
                 upgRareName: "🌈 突变几率",
-                upgRareDesc: "提高高额稀有＆珍奇<br>幽灵的出现几率！",
+                upgRareDesc: "稀有率提升",
                 upgMagName: "🧲 吸入威力",
-                upgMagDesc: "手指滑动时的<br>吸取范围大幅扩大！",
+                upgMagDesc: "范围扩大",
                 catcherTitle: "🤖 幽灵捕获机",
                 catcherFreeUnlockBtn: "免费解锁",
                 feverStartBtn: "立即开启！",
@@ -1165,13 +960,13 @@
                 seTitle: "효과음 (SE)",
                 doneBtn: "완료",
                 upgSpeedName: "⚡ 출현 속도",
-                upgSpeedDesc: "등장 간격 단축＆<br>한 번에 대량 출현!",
+                upgSpeedDesc: "출현 간격 단축",
                 upgCapName: "🏠 방 확장",
-                upgCapDesc: "방에 모아둘 수 있는<br>유령 최대 수 증가!",
+                upgCapDesc: "최대 수 증가",
                 upgRareName: "🌈 돌연변이율",
-                upgRareDesc: "값비싼 레어＆희귀종<br>유령의 출현 확률 UP!",
+                upgRareDesc: "레어 확률 증가",
                 upgMagName: "🧲 흡입 파워",
-                upgMagDesc: "손가락으로 문지를 때의<br>흡입 범위 확대!",
+                upgMagDesc: "범위 확대",
                 catcherTitle: "🤖 유령 캐처",
                 catcherFreeUnlockBtn: "무료 잠금 해제",
                 feverStartBtn: "지금 발동!",
@@ -1183,7 +978,7 @@
                 feverTitle: "🔥 피버",
                 feverTime: "20초",
                 feverAdBtn: "📺 무료 발동",
-                bannerFastTitle: "강력 배터 가동 중!",
+                bannerFastTitle: "강력 배터리 가동 중!",
                 bannerFastLabel: "방치 여유",
                 bannerEcoTitle: "캐처 일시 정지 중",
                 bannerEcoSub: "터치하여 재개",
@@ -1360,7 +1155,7 @@
                 wizard: { name: "마법사 유령", desc: "커다란 꼬깔모자를 쓰고 신비한 마법을 부립니다." },
                 galaxy: { name: "갤럭시 유령", desc: "우주의 별들을 두른 궁극의 신출귀몰 유령." },
                 ninja: { name: "닌자 유령", desc: "어둠에 섞여 소리 없이 빠르게 이동하는 은밀 유령." },
-                pirate: { name: "해적 유령", desc: "안대를 하고 보물을 찾아 헤매는 바다의 사나이." },
+                pirate: { name: "해적 유령", desc: "안대를 하고 보물을 찾아 헤매는 바ダ의 사나이." },
                 doctor: { name: "치과의사 유령", desc: "충치를 퇴치하기 위해 거대한 칫솔을 들고 있습니다." },
                 chef: { name: "요리사 유령", desc: "특제 오므라이스를 머리에 얹은 미식가 유령." },
                 detective: { name: "명탐정 유령", desc: "돋보기로 작은 단서도 놓치지 않는 명석한 유령." },
@@ -1443,13 +1238,13 @@
             safeSetText('save-indicator', dict.saveIndicator);
 
             safeSetText('txt-upg-speed-name', dict.upgSpeedName);
-            safeSetHtml('txt-upg-speed-desc', dict.upgSpeedDesc);
+            safeSetText('txt-upg-speed-desc', dict.upgSpeedDesc);
             safeSetText('txt-upg-cap-name', dict.upgCapName);
-            safeSetHtml('txt-upg-cap-desc', dict.upgCapDesc);
+            safeSetText('txt-upg-cap-desc', dict.upgCapDesc);
             safeSetText('txt-upg-rare-name', dict.upgRareName);
-            safeSetHtml('txt-upg-rare-desc', dict.upgRareDesc);
+            safeSetText('txt-upg-rare-desc', dict.upgRareDesc);
             safeSetText('txt-upg-magnet-name', dict.upgMagName);
-            safeSetHtml('txt-upg-magnet-desc', dict.upgMagDesc);
+            safeSetText('txt-upg-magnet-desc', dict.upgMagDesc);
 
             safeSetText('txt-catcher-card-title', dict.catcherTitle);
             safeSetText('txt-fever-card-title', dict.feverTitle);
@@ -1477,16 +1272,14 @@
 
             const purchaseBtn = document.getElementById('btn-purchase-execute');
             if (purchaseBtn) {
-                const pText = dict.catcherFreeUnlockBtn || "無料でアンロック";
-                purchaseBtn.textContent = pText;
+                purchaseBtn.textContent = dict.catcherFreeUnlockBtn || "無料でアンロック";
                 purchaseBtn.style.setProperty('background-color', '#0284c7', 'important');
                 purchaseBtn.style.setProperty('color', '#ffffff', 'important');
             }
 
             const feverExecBtn = document.getElementById('btn-fever-execute');
             if (feverExecBtn) {
-                const fText = dict.feverStartBtn || "今すぐ発動！";
-                feverExecBtn.textContent = fText;
+                feverExecBtn.textContent = dict.feverStartBtn || "今すぐ発動！";
                 feverExecBtn.style.setProperty('background-color', '#e11d48', 'important');
                 feverExecBtn.style.setProperty('color', '#ffffff', 'important');
             }
@@ -1509,6 +1302,7 @@
                 }
             });
         }
+
         function triggerMilestoneReward(milestoneObj) {
             state.claimedMilestones[milestoneObj.id] = true;
             initAudio();
@@ -1539,7 +1333,6 @@
 
             const hasMilestoneAlready = ghostPool.some(g => g.active && g.isMilestone);
             if (!hasMilestoneAlready) {
-                // お部屋が満員の場合は通常のおばけを1匹自動回収して枠を空ける
                 let emptyGhost = ghostPool.find(g => !g.active);
                 if (!emptyGhost) {
                     const sacrifice = ghostPool.find(ghost => ghost.active && !ghost.isMilestone);
@@ -1631,6 +1424,7 @@
             const modal = document.getElementById('modal-login-reward');
             if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
         });
+
         const spriteCache = {};
         function generateGhostSpriteData(typeObj, isUnlocked = true) {
             const key = `${typeObj.id}_${isUnlocked}`;
@@ -1678,17 +1472,14 @@
             ctx.font = `800 ${Math.round(r * 0.7)}px sans-serif`;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
-            // 図形描画の装飾
             if (acc === 'beret') { ctx.fillStyle = '#4a4e69'; ctx.beginPath(); ctx.ellipse(0, -r * 0.95, r * 0.7, r * 0.28, -0.15, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -r * 1.2); ctx.lineTo(-r * 0.1, -r * 1.38); ctx.stroke(); }
             else if (acc === 'horns') { ctx.fillStyle = '#ff6b6b'; ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.85); ctx.lineTo(-r * 0.75, -r * 1.35); ctx.lineTo(-r * 0.2, -r * 1.0); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             else if (acc === 'crown') { ctx.fillStyle = '#fcc419'; ctx.beginPath(); ctx.moveTo(-r * 0.45, -r * 0.9); ctx.lineTo(-r * 0.55, -r * 1.45); ctx.lineTo(-r * 0.18, -r * 1.15); ctx.lineTo(0, -r * 1.55); ctx.lineTo(r * 0.18, -r * 1.15); ctx.lineTo(r * 0.55, -r * 1.45); ctx.lineTo(r * 0.45, -r * 0.9); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-            else if (acc === 'cat' || acc === 'ghost_cat') { ctx.fillStyle = typeObj.id === 'ghost_cat' ? '#e879f9' : '#ffb3c6'; ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.85); ctx.lineTo(-r * 0.75, -r * 1.3); ctx.lineTo(-r * 0.25, -r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(r * 0.5, -r * 0.85); ctx.lineTo(r * 0.75, -r * 1.3); ctx.lineTo(r * 0.25, -r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            else if (acc === 'cat' || acc === 'ghost_cat') { ctx.fillStyle = typeObj.id === 'ghost_cat' ? '#e879f9' : '#ffb3c6'; ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.85); ctx.lineTo(-r * 0.75, -r * 1.3); ctx.lineTo(-r * 0.25, -r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             else if (acc === 'punk') { ctx.fillStyle = '#f43f5e'; ctx.beginPath(); ctx.moveTo(0, -r * 0.85); ctx.lineTo(-r * 0.25, -r * 1.4); ctx.lineTo(0, -r * 1.25); ctx.lineTo(r * 0.25, -r * 1.4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             else if (acc === 'wizard') { ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.moveTo(-r * 0.7, -r * 0.85); ctx.lineTo(r * 0.7, -r * 0.85); ctx.lineTo(0, -r * 1.65); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             else if (acc === 'alien') { ctx.fillStyle = '#34d399'; ctx.beginPath(); ctx.moveTo(0, -r * 0.9); ctx.lineTo(0, -r * 1.4); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -r * 1.4, r*0.15, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
             else if (acc === 'bunny') { ctx.fillStyle = '#fbcfe8'; ctx.beginPath(); ctx.ellipse(-r*0.4, -r*1.1, r*0.2, r*0.6, -0.2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.ellipse(r*0.4, -r*1.1, r*0.2, r*0.6, 0.2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
-            
-            // Emojiやテキストによる装飾
             else if (acc === 'zzz') { ctx.fillStyle = '#3b82f6'; ctx.font = `800 ${Math.round(r * 0.45)}px sans-serif`; ctx.fillText('Zzz', r * 0.4, -r * 0.8); }
             else if (acc === 'angel') { ctx.fillText('👼', 0, -r * 1.1); }
             else if (acc === 'galaxy') { ctx.fillText('🪐', 0, -r * 1.1); }
@@ -1709,7 +1500,6 @@
             else if (acc === 'emperor') { ctx.fillText('👑', 0, -r * 1.1); }
             else if (acc === 'cosmos') { ctx.fillText('🌌', 0, -r * 1.1); }
             else if (acc === 'god') { ctx.fillText('✨', 0, -r * 1.1); }
-            
             else if (acc === 'day_sun') { ctx.fillText('🛌', 0, -r * 1.1); }
             else if (acc === 'day_mon') { ctx.fillText('☕', 0, -r * 1.1); }
             else if (acc === 'day_tue') { ctx.fillText('🔥', 0, -r * 1.1); }
@@ -1717,7 +1507,6 @@
             else if (acc === 'day_thu') { ctx.fillText('👓', 0, -r * 0.4); }
             else if (acc === 'day_fri') { ctx.fillText('🎉', 0, -r * 1.1); }
             else if (acc === 'day_sat') { ctx.fillText('🧳', 0, -r * 1.1); }
-
             else if (acc === 'month_1') { ctx.fillText('🍊', 0, -r * 1.1); }
             else if (acc === 'month_2') { ctx.fillText('🍫', 0, -r * 1.1); }
             else if (acc === 'month_3') { ctx.fillText('🍡', 0, -r * 1.1); }
@@ -1730,7 +1519,6 @@
             else if (acc === 'month_10') { ctx.fillText('🎃', 0, -r * 1.1); }
             else if (acc === 'month_11') { ctx.fillText('🍠', 0, -r * 1.1); }
             else if (acc === 'month_12') { ctx.fillText('🎅', 0, -r * 1.1); }
-            
             else if (acc === 'login_3') { ctx.fillText('📿', 0, -r * 1.1); }
             else if (acc === 'login_7') { ctx.fillText('💮', 0, -r * 1.1); }
             else if (acc === 'login_14') { ctx.fillText('📅', 0, -r * 1.1); }
@@ -1739,6 +1527,7 @@
             else if (acc === 'login_100') { ctx.fillText('🎓', 0, -r * 1.1); }
             else if (acc === 'login_365') { ctx.fillText('🎂', 0, -r * 1.1); }
         }
+
         const ghostPool = [];
         function initGhostDOMPool() {
             const container = document.getElementById('ghost-playground');
@@ -1865,6 +1654,7 @@
         function spawnInitialGhosts() {
             for (let i = 0; i < 6; i++) activateGhostFromPool(null, null, pickGhostType(), 1, false);
         }
+
         function collectGhostInstance(g, multiplier = 1.0) {
             if (!g || !g.active) return;
             
@@ -1893,7 +1683,6 @@
 
             playPopSound(g.type.pitch || "G5");
 
-            // パーティクル＆浮遊テキストの過剰生成を防止
             if (state.particles.length < 40) {
                 for (let i = 0; i < 2; i++) {
                     state.particles.push({
@@ -2043,6 +1832,7 @@
                 saveGameDataNow();
             }
         }
+
         let audioReady = false, bgmGain = null, seGain = null, popSynth = null;
         let bgmChordsSynth = null, bgmMelodySynth = null, bgmBassSynth = null, bgmStarSynth = null, bgmStarBass = null;
         let bgmCurrentStep = 0, feverStep = 0, bgmScheduledEventId = null;
@@ -2241,8 +2031,6 @@
                 const ecoHarvest = Math.floor((ecoSeconds / interval) * batchSize * efficiency);
 
                 const avgValue = getAverageGhostValue();
-
-                // 強力バッテリー中は平均価値の10%、エコモード中は1%として計算（減衰率を元に戻す）
                 const fastScore = Math.floor(fastHarvest * avgValue * 0.10);
                 const ecoScore = Math.floor(ecoHarvest * avgValue * 0.01);
 
@@ -2287,6 +2075,7 @@
             modal.classList.add("flex");
             saveGameDataNow();
         }
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         let cw = 0, ch = 0;
@@ -2323,6 +2112,7 @@
         playContainer.addEventListener('touchstart', (e) => { initAudio(); isPointerDown = true; handlePointerMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
         playContainer.addEventListener('touchmove', (e) => { if (!isPointerDown) return; handlePointerMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
         playContainer.addEventListener('touchend', () => { isPointerDown = false; pointerPos = { x: -999, y: -999 }; });
+
         function saveGameDataNow() {
             if (window.isResetting) return;
             try {
@@ -2371,14 +2161,9 @@
             }
         }
 
-        // スマホ画面切り替え・バックグラウンド移行時のセーブ
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') {
-                saveGameDataNow();
-            }
+            if (document.visibilityState === 'hidden') saveGameDataNow();
         });
-
-        // ページ終了・離脱時の完全フック（iOS Safari / Android Chrome / PC共通）
         window.addEventListener('pagehide', saveGameDataNow);
         window.addEventListener('beforeunload', saveGameDataNow);
 
@@ -2438,11 +2223,11 @@
             if (state.hasRoomba) {
                 if (badge) {
                     badge.textContent = state.roombaActive ? dict.catcherActive : dict.catcherPausedBadge;
-                    badge.className = `text-[8px] font-bold px-1 rounded text-white ${state.roombaActive ? 'bg-emerald-600' : 'bg-stone-500'}`;
+                    badge.className = `text-[7.5px] font-bold px-1 rounded text-white ${state.roombaActive ? 'bg-emerald-600' : 'bg-stone-500'}`;
                 }
                 if (btnBuy) {
                     btnBuy.textContent = state.roombaActive ? dict.catcherPause : dict.catcherResume;
-                    btnBuy.className = `w-full font-extrabold text-[9.5px] rounded py-1 transition text-white shadow-sm border border-stone-800 ${state.roombaActive ? 'bg-stone-600 hover:bg-stone-700' : 'bg-emerald-600 hover:bg-emerald-700'}`;
+                    btnBuy.className = `w-full font-extrabold text-[9px] rounded py-0.5 transition text-white shadow-sm border border-stone-800 ${state.roombaActive ? 'bg-stone-600 hover:bg-stone-700' : 'bg-emerald-600 hover:bg-emerald-700'}`;
                 }
 
                 if (state.roombaActive) {
@@ -2457,11 +2242,11 @@
             } else {
                 if (badge) {
                     badge.textContent = dict.catcherLocked || "未解放"; 
-                    badge.className = "text-[8px] font-bold bg-sky-600 text-white px-1 rounded";
+                    badge.className = "text-[7.5px] font-bold bg-sky-600 text-white px-1 rounded";
                 }
                 if (btnBuy) {
                     btnBuy.textContent = dict.catcherFreeUnlockBtn || "【試験版】無料でアンロック";
-                    btnBuy.className = "w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9.5px] rounded py-1 shadow-sm border border-stone-800";
+                    btnBuy.className = "w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-[9px] rounded py-0.5 shadow-sm border border-stone-800";
                 }
                 if (fastBanner) fastBanner.classList.add('hidden');
                 if (ecoBanner) ecoBanner.classList.add('hidden');
@@ -2492,17 +2277,18 @@
                 if (btnEl) btnEl.disabled = isMax || state.score < cost;
             });
         }
+
         safeAddListener('tab-upgrade', 'click', () => {
-            document.getElementById('tab-upgrade').className = "flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition";
-            document.getElementById('tab-shop').className = "flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative";
+            document.getElementById('tab-upgrade').className = "flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition";
+            document.getElementById('tab-shop').className = "flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition relative";
             document.getElementById('panel-upgrade').classList.remove('hidden'); 
             document.getElementById('panel-shop').classList.add('hidden'); 
             document.getElementById('panel-shop').classList.remove('grid');
         });
 
         safeAddListener('tab-shop', 'click', () => {
-            document.getElementById('tab-shop').className = "flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition relative";
-            document.getElementById('tab-upgrade').className = "flex-1 py-1 text-[11px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition";
+            document.getElementById('tab-shop').className = "flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition relative";
+            document.getElementById('tab-upgrade').className = "flex-1 py-1 text-[10.5px] font-extrabold rounded-md border-2 border-stone-800 bg-white text-stone-800 transition";
             document.getElementById('panel-shop').classList.remove('hidden'); 
             document.getElementById('panel-shop').classList.add('grid'); 
             document.getElementById('panel-upgrade').classList.add('hidden');
@@ -2529,6 +2315,8 @@
             const pBtn = document.getElementById('btn-purchase-execute');
             if (pBtn) {
                 pBtn.textContent = dict.catcherFreeUnlockBtn || "無料でアンロック";
+                pBtn.style.setProperty('background-color', '#0284c7', 'important');
+                pBtn.style.setProperty('color', '#ffffff', 'important');
             }
             if (modal) {
                 modal.classList.remove('hidden');
@@ -2610,19 +2398,19 @@
 
             const now = Date.now();
             const remainingMs = (state.feverAvailableTimestamp || 0) - now;
-            const lang = state.language || 'ja';
-            const dict = I18N[lang] || I18N.ja;
 
             if (remainingMs > 0) {
                 const totalSec = Math.ceil(remainingMs / 1000);
                 const m = Math.floor(totalSec / 60);
                 const s = totalSec % 60;
-                btn.textContent = `${dict.feverWaiting || '⏳ 待機'} ${m}:${s < 10 ? '0' : ''}${s}`;
-                btn.className = "w-full bg-stone-400 text-white font-extrabold text-[8px] rounded py-0.5 text-center mt-auto pointer-events-none border border-stone-500";
+                btn.textContent = `⏳ ${m}:${s < 10 ? '0' : ''}${s}`;
+                btn.className = "w-full bg-stone-400 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none border border-stone-500";
                 card.style.opacity = "0.75";
             } else {
+                const lang = state.language || 'ja';
+                const dict = I18N[lang] || I18N.ja;
                 btn.textContent = dict.feverAdBtn || "📺 お試し発動";
-                btn.className = "w-full bg-pink-500 text-white font-extrabold text-[8px] rounded py-0.5 text-center mt-auto pointer-events-none border border-pink-700";
+                btn.className = "w-full bg-pink-500 text-white font-extrabold text-[7.5px] rounded py-0.5 text-center mt-auto pointer-events-none border border-pink-700";
                 card.style.opacity = "1";
             }
         }
@@ -2646,6 +2434,8 @@
             const fBtn = document.getElementById('btn-fever-execute');
             if (fBtn) {
                 fBtn.textContent = dict.feverStartBtn || "今すぐ発動！";
+                fBtn.style.setProperty('background-color', '#e11d48', 'important');
+                fBtn.style.setProperty('color', '#ffffff', 'important');
             }
             if (modal) {
                 modal.classList.remove('hidden');
@@ -2967,6 +2757,7 @@
                 modal.classList.remove('flex'); 
             }
         });
+
         function gameLoop() {
             try {
                 const now = Date.now();
@@ -3016,7 +2807,6 @@
                     } 
                 }
 
-                // スポーン処理
                 const intervalMs = getSpawnIntervalMs();
                 const batchSize = getSpawnBatchSize();
                 state.spawnAccumulatorMs += elapsedMs;
@@ -3083,10 +2873,7 @@
                     ctx.fillStyle = '#10b981'; ctx.fill();
                     ctx.lineWidth = 3; ctx.strokeStyle = '#2d2d2d'; ctx.stroke();
                     ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-                    const lang = state.language || 'ja';
-                    const dict = I18N[lang] || I18N.ja;
-                    ctx.fillText(dict.catcherCanvasFast || '⚡強力', 0, -2);
-                    ctx.fillText('FAST', 0, 7);
+                    ctx.fillText('⚡FAST', 0, 3);
                     ctx.restore();
 
                     const curActive = getActiveGhosts();
@@ -3109,14 +2896,12 @@
                     ctx.stroke(); ctx.restore();
                 }
 
-                // パーティクル描画
                 for (let i = state.particles.length - 1; i >= 0; i--) {
                     const p = state.particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
                     if (p.alpha <= 0) { state.particles.splice(i, 1); continue; }
                     ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
                 }
 
-                // 浮遊テキスト描画
                 if (state.floatingTexts.length > 0) {
                     ctx.save();
                     ctx.font = '800 13px "M PLUS Rounded 1c", sans-serif';
@@ -3137,7 +2922,6 @@
                     isUiDirty = false;
                 }
 
-                // ブラウザのスロットリング対策: メインループ内で確実に2秒ごとにセーブする
                 if (now - lastAutoSaveTime >= 2000) {
                     saveGameDataNow();
                 }
