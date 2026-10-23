@@ -7,6 +7,33 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+
+    <!-- 📊 Google Analytics 4 (GA4) プレイ人口・アクティブユーザー計測 -->
+    <script>
+        // 📊 Google Analytics 4 測定ID
+        const rawMeasurementId = 'G-DKJB6JHPT5';
+        window.GA_MEASUREMENT_ID = rawMeasurementId.startsWith('G-') ? rawMeasurementId : ('G-' + rawMeasurementId);
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ window.dataLayer.push(arguments); }
+        window.gtag = gtag;
+
+        if (window.GA_MEASUREMENT_ID && window.GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX') {
+            const gaScript = document.createElement('script');
+            gaScript.async = true;
+            gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.GA_MEASUREMENT_ID;
+            document.head.appendChild(gaScript);
+
+            gtag('js', new Date());
+            gtag('config', window.GA_MEASUREMENT_ID, {
+                send_page_view: true,
+                cookie_flags: 'SameSite=None;Secure'
+            });
+            console.log('[Analytics] GA4 Initialized with ID:', window.GA_MEASUREMENT_ID);
+        } else {
+            console.log('[Analytics] GA4 running in Mock mode (Set window.GA_MEASUREMENT_ID to enable).');
+        }
+    </script>
     <style>
         * {
             user-select: none;
@@ -576,6 +603,78 @@
         function markSaveDirty() {
             isSaveDirty = true;
         }
+
+        // =========================================================
+        // 📊 プレイ人口・ゲーム進行分析ハブ (GA4連携)
+        // =========================================================
+        const GameAnalytics = {
+            track(eventName, params = {}) {
+                try {
+                    if (typeof window.gtag === 'function') {
+                        window.gtag('event', eventName, params);
+                    }
+                    if (window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
+                        console.log(`[GameAnalytics] 🎯 ${eventName}`, params);
+                    }
+                } catch (e) {
+                    console.warn('[GameAnalytics Error]', e);
+                }
+            },
+
+            // 1. ゲーム起動時（DAU/MAU/プレイヤー進捗状況）
+            trackGameStart() {
+                const unlockedCount = Object.keys(state.unlockedDex || {}).filter(k => state.unlockedDex[k]).length;
+                this.track('game_start', {
+                    login_days: state.totalLoginDays || 1,
+                    unlocked_ghosts: unlockedCount,
+                    total_score: Math.floor(state.score || 0),
+                    has_roomba: !!state.hasRoomba,
+                    lang: state.language || 'ja'
+                });
+            },
+
+            // 2. 図鑑解放（おばけ新種解放 / マイルストーン）
+            trackGhostUnlock(ghostId, ghostName, unlockCost = 0) {
+                const unlockedCount = Object.keys(state.unlockedDex || {}).filter(k => state.unlockedDex[k]).length;
+                this.track('unlock_ghost', {
+                    ghost_id: ghostId,
+                    ghost_name: ghostName,
+                    cost: unlockCost || 0,
+                    total_unlocked: unlockedCount
+                });
+
+                // マイルストーン（10, 20, 30種達成）
+                if ([10, 20, 30].includes(unlockedCount)) {
+                    this.track('zukan_milestone', {
+                        milestone_count: unlockedCount
+                    });
+                }
+            },
+
+            // 3. フィーバータイム発動
+            trackFever(triggerType = 'button', durationSec = 20) {
+                this.track('fever_activated', {
+                    trigger: triggerType,
+                    duration: durationSec
+                });
+            },
+
+            // 4. 育成・強化
+            trackUpgrade(upgradeType, newLevel) {
+                this.track('upgrade_ability', {
+                    upgrade_type: upgradeType,
+                    new_level: newLevel
+                });
+            },
+
+            // 5. アイテム・キャッチャー購入/解放
+            trackPurchase(itemType, itemName) {
+                this.track('purchase_item', {
+                    item_type: itemType,
+                    item_name: itemName
+                });
+            }
+        };
 
         function formatAstronomicalNumber(num) {
             if (num === null || num === undefined || isNaN(num)) return "0";
@@ -1408,7 +1507,6 @@
                     state.totalLoginDays = (state.totalLoginDays || 1) + 1;
                 }
                 state.lastLoginCycle = currentCycle;
-                saveGameDataNow();
 
                 const milestone = MILESTONE_GHOST_TYPES.find(g => g.reqDays === state.totalLoginDays);
                 if (milestone && !state.claimedMilestones[milestone.id]) {
@@ -1750,6 +1848,7 @@
                     const dict = I18N[lang] || I18N.ja;
                     const locName = getGhostLocalizedData(g.type).name;
                     showGameToast(dict.dexRegisteredMsg(locName));
+                    GameAnalytics.trackGhostUnlock(g.type.id, locName, 0);
                     saveGameDataNow();
                 }
             }
@@ -1757,6 +1856,7 @@
             if (g.type.id === 'login_365') {
                 state.feverTimeLeft = Math.max(state.feverTimeLeft, 20);
                 showGameToast("🎂 1周年記念フィーバー20秒が発動！");
+                GameAnalytics.trackFever('login_365', 20);
             }
 
             playPopSound(g.type.pitch || "G5");
@@ -1856,6 +1956,7 @@
             const dict = I18N[lang] || I18N.ja;
             const locName = getGhostLocalizedData(target).name;
             showGameToast(dict.dexUnlockedMsg(locName));
+            GameAnalytics.trackGhostUnlock(target.id, locName, target.unlockCost || 0);
             
             state.floatingTexts.push({ x: cw / 2, y: ch / 2, text: `🎉 ${locName} Unlock!`, color: '#ca8a04', alpha: 1, vy: -1.4 });
             renderDexList();
@@ -1908,7 +2009,7 @@
             if (state.lastBatteryResetCycle !== currentCycle) {
                 state.lastBatteryResetCycle = currentCycle;
                 state.batteryHighPowerLeft = 7200;
-                saveGameDataNow();
+                applyRoombaUIState();
             }
         }
 
@@ -2152,6 +2253,10 @@
             }
             modal.classList.remove("hidden");
             modal.classList.add("flex");
+            GameAnalytics.track('offline_collected', {
+                away_minutes: Math.floor(seconds / 60),
+                is_catcher: isCatcherActive
+            });
             applyRoombaUIState();
             updateUI();
             saveGameDataNow();
@@ -2244,6 +2349,22 @@
                 if (!Number.isFinite(state.lvlRare) || state.lvlRare < 1) state.lvlRare = 1;
                 if (!Number.isFinite(state.lvlMagnet) || state.lvlMagnet < 1) state.lvlMagnet = 1;
 
+                // 部屋にいるアクティブおばけのスナップショット
+                let activeRoomGhosts = undefined;
+                if (ghostPool.length > 0) {
+                    activeRoomGhosts = [];
+                    for (let i = 0; i < ghostPool.length; i++) {
+                        const g = ghostPool[i];
+                        if (g && g.active && g.type) {
+                            activeRoomGhosts.push({
+                                typeId: g.type.id,
+                                stackCount: g.stackCount || 1,
+                                isBaby: !!g.isBaby
+                            });
+                        }
+                    }
+                }
+
                 const snapshot = {
                     score: state.score,
                     ghostCounts: state.ghostCounts,
@@ -2273,7 +2394,8 @@
                     hasSelectedLanguage: state.hasSelectedLanguage,
                     totalLoginDays: state.totalLoginDays,
                     lastLoginCycle: state.lastLoginCycle,
-                    claimedMilestones: state.claimedMilestones
+                    claimedMilestones: state.claimedMilestones,
+                    roomGhosts: activeRoomGhosts !== undefined ? activeRoomGhosts : (state.roomGhosts || [])
                 };
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(snapshot));
                 const indicator = document.getElementById('save-indicator');
@@ -2310,7 +2432,6 @@
                     const elapsedMs = Date.now() - state.lastSavedTime;
                     if (elapsedMs > 15000) {
                         calculateOfflineRewards(elapsedMs / 1000);
-                        saveGameDataNow();
                     }
                 }
                 state.lastTickTime = Date.now();
@@ -2332,14 +2453,32 @@
             saveGameDataNow();
         });
         window.addEventListener('beforeunload', saveGameDataNow);
+        window.addEventListener('focus', () => {
+            if (!document.hidden && state.lastSavedTime) {
+                const elapsedMs = Date.now() - state.lastSavedTime;
+                if (elapsedMs > 15000) {
+                    calculateOfflineRewards(elapsedMs / 1000);
+                    state.lastTickTime = Date.now();
+                    applyRoombaUIState();
+                    updateUI();
+                }
+            }
+        });
 
         function loadGameData() {
+            let lastSavedAt = 0;
+            let loadedRoomGhosts = null;
             try {
                 const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     // 既存セーブデータの全項目を完全継承
                     Object.assign(state, parsed);
+
+                    lastSavedAt = parsed.lastSavedTime || 0;
+                    if (Array.isArray(parsed.roomGhosts)) {
+                        loadedRoomGhosts = parsed.roomGhosts;
+                    }
 
                     // 数値のNaNや不正値に対する安全ガード
                     if (!Number.isFinite(state.score) || state.score < 0) state.score = 0;
@@ -2351,6 +2490,14 @@
                 }
             } catch (e) {
                 console.warn("[Storage Load Warning]", e);
+            }
+
+            // 保存されていた部屋のおばけを復元
+            if (loadedRoomGhosts && loadedRoomGhosts.length > 0) {
+                loadedRoomGhosts.forEach(rg => {
+                    const t = GHOST_TYPES.find(gt => gt.id === rg.typeId) || GHOST_TYPES[0];
+                    activateGhostFromPool(null, null, t, rg.stackCount || 1, rg.isBaby);
+                });
             }
 
             checkDailyBatteryReset();
@@ -2374,9 +2521,12 @@
             }
             applyTranslations();
 
-            if (state.lastSavedTime) {
-                const elapsedMs = Date.now() - state.lastSavedTime;
-                if (elapsedMs > 15000) calculateOfflineRewards(elapsedMs / 1000);
+            // オフライン経過時間の判定（起動時チェックで上書きされる前のセーブ時刻を使用）
+            if (lastSavedAt > 0) {
+                const elapsedMs = Date.now() - lastSavedAt;
+                if (elapsedMs > 15000) {
+                    calculateOfflineRewards(elapsedMs / 1000);
+                }
             }
 
             if (getActiveGhostCount() === 0) spawnInitialGhosts();
@@ -2482,6 +2632,7 @@
                     state.score -= cost;
                     const prop = `lvl${type.charAt(0).toUpperCase() + type.slice(1)}`;
                     if (state[prop] < MAX_UPGRADE_LEVEL) state[prop]++;
+                    GameAnalytics.trackUpgrade(type, state[prop]);
                     playPopSound("A5"); updateUI(); saveGameDataNow();
                 }
             });
@@ -2510,6 +2661,7 @@
             state.hasRoomba = true;
             state.roombaActive = true;
             state.batteryHighPowerLeft = 7200;
+            GameAnalytics.trackPurchase('catcher_base', 'おばけキャッチャー本体');
             playPopSound("C6");
             
             const lang = state.language || 'ja';
@@ -2626,6 +2778,7 @@
             initAudio();
             state.feverTimeLeft += 20;
             state.feverAvailableTimestamp = Date.now() + (180 * 1000);
+            GameAnalytics.trackFever('button', 20);
             playPopSound("C6");
             
             const lang = state.language || 'ja';
@@ -3144,9 +3297,10 @@
 
         function startApp() {
             try {
-                loadGameData();
                 resizeCanvas();
                 initGhostDOMPool();
+                loadGameData();
+                GameAnalytics.trackGameStart();
                 initModalBackdropClosers();
                 state.lastTickTime = Date.now();
                 requestAnimationFrame(gameLoop);
