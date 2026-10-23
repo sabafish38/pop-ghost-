@@ -14,26 +14,43 @@
             -webkit-touch-callout: none;
             font-family: 'M PLUS Rounded 1c', sans-serif;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
+            height: 100dvh;
             position: fixed;
             inset: 0;
             overflow: hidden;
             background-color: #1c1917;
+            overscroll-behavior: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #game-app {
             position: relative;
-            width: 100%;
+            /* 縦横比を常に保持（標準スマホ比率 9:18 = 1:2） */
+            aspect-ratio: 9 / 18;
+            width: min(100vw, calc(100dvh * (9 / 18)));
+            height: min(100dvh, calc(100vw * (18 / 9)));
             max-width: 448px;
-            height: 100%;
+            max-height: 896px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            margin: 0 auto;
+            margin: auto;
+            padding-top: env(safe-area-inset-top, 0px);
+            border-radius: 0;
+        }
+        @media (min-width: 640px) {
+            #game-app {
+                border-radius: 16px;
+                border: 2px solid #2d2d2d;
+            }
         }
         .doodle-box {
             background: #ffffff;
@@ -67,7 +84,13 @@
             100% { background-color: #f3e8ff; }
         }
         .fever-mode {
-            animation: rainbow-fever 1.2s infinite alternate ease-in-out;
+            animation: rainbow-fever 1.2s infinite alternate ease-in-out !important;
+        }
+        .room-pattern {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#e5e0d5 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            background-position: 18px 18px;
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -172,7 +195,7 @@
         </header>
 
         <!-- メイン画面（おへや部分：画面の高さに合わせて自動伸縮） -->
-        <main id="canvas-container" class="flex-1 relative overflow-hidden cursor-pointer bg-[#fdfbf7] touch-none min-h-0 w-full">
+        <main id="canvas-container" class="flex-1 relative overflow-hidden cursor-pointer room-pattern touch-none min-h-0 w-full">
             <div id="fast-battery-banner" class="absolute top-1.5 left-1/2 -translate-x-1/2 w-[92%] max-w-[320px] bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full border-2 border-stone-800 shadow-md text-center leading-tight z-30 hidden flex justify-between items-center animate-pulse">
                 <span>⚡ <b id="txt-banner-fast-title">強力バッテリー稼働中！</b></span>
                 <span class="bg-white/20 text-white text-[7.5px] px-1 py-0.5 rounded-full font-bold">🔋<span id="txt-banner-fast-label">放置枠</span> <span id="fast-battery-timer-txt">2h</span></span>
@@ -192,7 +215,7 @@
         </main>
 
         <!-- フッター（コンパクト化・画面内に必ず収まる固定エリア） -->
-        <footer class="z-20 bg-[#f5f0e6] border-t-2 border-stone-800 px-1.5 py-1 shrink-0">
+        <footer class="z-20 bg-[#f5f0e6] border-t-2 border-stone-800 px-1.5 pt-1.5 shrink-0" style="padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));">
             <div class="flex gap-1 mb-1">
                 <button id="tab-upgrade" class="flex-1 py-0.5 text-[10px] font-extrabold rounded-md border-2 border-stone-800 bg-stone-800 text-white transition leading-tight">
                     🛠️ 育成・強化
@@ -516,7 +539,7 @@
             </div>
         </div>
 
-        <div id="game-toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-[10.5px] font-bold px-3 py-1.5 rounded-full border border-stone-600 shadow-xl pointer-events-none opacity-0 transition-opacity duration-300 z-50"></div>
+        <div id="game-toast" class="fixed left-1/2 -translate-x-1/2 bg-stone-800 text-white text-[10.5px] font-bold px-3 py-1.5 rounded-full border border-stone-600 shadow-xl pointer-events-none opacity-0 transition-opacity duration-300 z-50" style="bottom: calc(175px + env(safe-area-inset-bottom, 0px));"></div>
     </div>
 
     <script>
@@ -525,14 +548,33 @@
         const MAX_UPGRADE_LEVEL = 99;
 
         let isUiDirty = false;
+        let isSaveDirty = false;
         let lastPopSoundTime = 0;
         let lastAppliedBpm = 104;
         let lastAutoSaveTime = Date.now();
         let toastTimerId = null;
 
-        function safeAddListener(id, event, handler) {
+        function safeAddListener(id, event, handler, options) {
             const el = document.getElementById(id);
-            if (el) el.addEventListener(event, handler);
+            if (el) el.addEventListener(event, handler, options);
+        }
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function markSaveDirty() {
+            isSaveDirty = true;
         }
 
         function formatAstronomicalNumber(num) {
@@ -1337,10 +1379,7 @@
                 `;
             }
 
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
+            openModal('modal-login-reward');
 
             const hasMilestoneAlready = ghostPool.some(g => g.active && g.isMilestone);
             if (!hasMilestoneAlready) {
@@ -1416,24 +1455,18 @@
                 }
             }
 
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
+            openModal('modal-login-info');
         }
 
         safeAddListener('btn-login-info', 'click', openLoginInfoModal);
         safeAddListener('btn-login-info-close', 'click', () => {
-            const modal = document.getElementById('modal-login-info');
-            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            closeModal('modal-login-info');
         });
         safeAddListener('btn-login-info-ok', 'click', () => {
-            const modal = document.getElementById('modal-login-info');
-            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            closeModal('modal-login-info');
         });
         safeAddListener('btn-login-reward-claim', 'click', () => {
-            const modal = document.getElementById('modal-login-reward');
-            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            closeModal('modal-login-reward');
         });
 
         const spriteCache = {};
@@ -1564,8 +1597,30 @@
             }
         }
 
-        function getActiveGhosts() { return ghostPool.filter(g => g.active); }
-        function getTotalGhostsInRoom() { return ghostPool.reduce((sum, g) => sum + (g.active ? g.stackCount : 0), 0); }
+        function getActiveGhosts() { 
+            const arr = [];
+            for (let i = 0; i < ghostPool.length; i++) {
+                if (ghostPool[i].active) arr.push(ghostPool[i]);
+            }
+            return arr;
+        }
+
+        function getTotalGhostsInRoom() {
+            let sum = 0;
+            for (let i = 0; i < ghostPool.length; i++) {
+                const g = ghostPool[i];
+                if (g.active) sum += (g.stackCount || 1);
+            }
+            return sum;
+        }
+
+        function getActiveGhostCount() {
+            let count = 0;
+            for (let i = 0; i < ghostPool.length; i++) {
+                if (ghostPool[i].active) count++;
+            }
+            return count;
+        }
 
         function getActiveCalendarGhosts() {
             const curDay = getCurrentDay();
@@ -1640,7 +1695,7 @@
             let remainingToAdd = Math.min(count, Math.max(0, maxCap - currentTotal));
             if (remainingToAdd <= 0) return;
 
-            let activeCount = getActiveGhosts().length;
+            let activeCount = getActiveGhostCount();
             while (remainingToAdd > 0 && activeCount < MAX_POOL_SIZE) {
                 const targetType = pickGhostType();
                 activateGhostFromPool(null, null, targetType, 1, false);
@@ -1649,15 +1704,27 @@
             }
 
             if (remainingToAdd > 0) {
-                const active = getActiveGhosts();
-                if (active.length > 0) {
-                    const targetType = pickGhostType();
-                    let match = active.find(g => g.type.id === targetType.id && !g.isMilestone);
-                    if (!match) match = active.find(g => !g.isMilestone) || active[0];
-                    if (match) {
-                        match.stackCount += remainingToAdd;
-                        updateGhostStackBadge(match);
+                const targetType = pickGhostType();
+                let match = null;
+                for (let i = 0; i < ghostPool.length; i++) {
+                    const g = ghostPool[i];
+                    if (g.active && !g.isMilestone && g.type.id === targetType.id) {
+                        match = g;
+                        break;
                     }
+                }
+                if (!match) {
+                    for (let i = 0; i < ghostPool.length; i++) {
+                        const g = ghostPool[i];
+                        if (g.active && !g.isMilestone) {
+                            match = g;
+                            break;
+                        }
+                    }
+                }
+                if (match) {
+                    match.stackCount += remainingToAdd;
+                    updateGhostStackBadge(match);
                 }
             }
         }
@@ -1737,12 +1804,13 @@
             g.el.style.display = 'none';
 
             isUiDirty = true;
+            markSaveDirty();
         }
 
         function collectGhostsAt(x, y, radius, multiplier = 1.0) {
-            const active = getActiveGhosts();
-            for (let i = active.length - 1; i >= 0; i--) {
-                const g = active[i];
+            for (let i = ghostPool.length - 1; i >= 0; i--) {
+                const g = ghostPool[i];
+                if (!g.active) continue;
                 if (Math.hypot(g.x - x, g.y - y) <= radius + g.radius) {
                     collectGhostInstance(g, multiplier);
                 }
@@ -2084,12 +2152,15 @@
             }
             modal.classList.remove("hidden");
             modal.classList.add("flex");
+            applyRoombaUIState();
+            updateUI();
             saveGameDataNow();
         }
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         let cw = 0, ch = 0;
+        let dpr = 1;
         let pointerPos = { x: -999, y: -999 };
         let isPointerDown = false;
 
@@ -2098,8 +2169,25 @@
             if (!container) return;
             cw = container.clientWidth;
             ch = container.clientHeight;
-            canvas.width = cw;
-            canvas.height = ch;
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.floor(cw * dpr);
+            canvas.height = Math.floor(ch * dpr);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+
+            if (state.roombaObj) {
+                const boundRadius = 36;
+                if (cw > boundRadius * 2 && ch > boundRadius * 2) {
+                    const minX = boundRadius;
+                    const maxX = cw - boundRadius;
+                    const minY = boundRadius;
+                    const maxY = ch - boundRadius;
+                    state.roombaObj.x = Math.max(minX, Math.min(maxX, state.roombaObj.x || 150));
+                    state.roombaObj.y = Math.max(minY, Math.min(maxY, state.roombaObj.y || 150));
+                }
+                if (!state.roombaObj.vx) state.roombaObj.vx = 2.2;
+                if (!state.roombaObj.vy) state.roombaObj.vy = 2.0;
+            }
         }
         window.addEventListener('resize', resizeCanvas);
         if (window.visualViewport) {
@@ -2120,12 +2208,26 @@
         }
         
         const playContainer = document.getElementById('canvas-container');
-        playContainer.addEventListener('mousedown', (e) => { initAudio(); isPointerDown = true; handlePointerMove(e.clientX, e.clientY); });
-        window.addEventListener('mousemove', (e) => { if (!isPointerDown) return; handlePointerMove(e.clientX, e.clientY); });
-        window.addEventListener('mouseup', () => { isPointerDown = false; pointerPos = { x: -999, y: -999 }; });
-        playContainer.addEventListener('touchstart', (e) => { initAudio(); isPointerDown = true; handlePointerMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
-        playContainer.addEventListener('touchmove', (e) => { if (!isPointerDown) return; handlePointerMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
-        playContainer.addEventListener('touchend', () => { isPointerDown = false; pointerPos = { x: -999, y: -999 }; });
+        if (playContainer) {
+            playContainer.addEventListener('pointerdown', (e) => {
+                initAudio();
+                isPointerDown = true;
+                try { playContainer.setPointerCapture(e.pointerId); } catch(_) {}
+                handlePointerMove(e.clientX, e.clientY);
+            });
+            playContainer.addEventListener('pointermove', (e) => {
+                if (!isPointerDown) return;
+                handlePointerMove(e.clientX, e.clientY);
+            });
+            const endPointer = (e) => {
+                isPointerDown = false;
+                pointerPos.x = -999;
+                pointerPos.y = -999;
+                try { playContainer.releasePointerCapture(e.pointerId); } catch(_) {}
+            };
+            playContainer.addEventListener('pointerup', endPointer);
+            playContainer.addEventListener('pointercancel', endPointer);
+        }
 
         function saveGameDataNow() {
             if (window.isResetting) return;
@@ -2133,6 +2235,15 @@
                 const nowTime = Date.now();
                 state.lastSavedTime = nowTime;
                 lastAutoSaveTime = nowTime;
+                isSaveDirty = false;
+
+                // 数値データの安全チェック（NaN/無限大対策）
+                if (!Number.isFinite(state.score) || state.score < 0) state.score = 0;
+                if (!Number.isFinite(state.lvlSpeed) || state.lvlSpeed < 1) state.lvlSpeed = 1;
+                if (!Number.isFinite(state.lvlCap) || state.lvlCap < 1) state.lvlCap = 1;
+                if (!Number.isFinite(state.lvlRare) || state.lvlRare < 1) state.lvlRare = 1;
+                if (!Number.isFinite(state.lvlMagnet) || state.lvlMagnet < 1) state.lvlMagnet = 1;
+
                 const snapshot = {
                     score: state.score,
                     ghostCounts: state.ghostCounts,
@@ -2175,10 +2286,51 @@
             }
         }
 
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') saveGameDataNow();
+        function handleVisibilityChange() {
+            if (document.hidden || document.visibilityState === 'hidden') {
+                if (state.feverTimeLeft > 0) {
+                    state.feverTimeLeft = 0;
+                    const canvasBox = document.getElementById('canvas-container');
+                    if (canvasBox) canvasBox.classList.remove('fever-mode');
+                }
+                saveGameDataNow();
+                try {
+                    if (window.Tone && Tone.Transport && Tone.Transport.state === 'started') {
+                        Tone.Transport.pause();
+                    }
+                } catch (e) {}
+            } else {
+                if (state.feverTimeLeft > 0) {
+                    state.feverTimeLeft = 0;
+                    const canvasBox = document.getElementById('canvas-container');
+                    if (canvasBox) canvasBox.classList.remove('fever-mode');
+                }
+
+                if (state.lastSavedTime) {
+                    const elapsedMs = Date.now() - state.lastSavedTime;
+                    if (elapsedMs > 15000) {
+                        calculateOfflineRewards(elapsedMs / 1000);
+                        saveGameDataNow();
+                    }
+                }
+                state.lastTickTime = Date.now();
+                applyRoombaUIState();
+                updateUI();
+                try {
+                    if (window.Tone && state.bgmEnabled && state.bgmVolume > 0 && Tone.Transport) {
+                        if (Tone.context && Tone.context.state !== 'running') {
+                            Tone.context.resume();
+                        }
+                        Tone.Transport.start();
+                    }
+                } catch (e) {}
+            }
+        }
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('pagehide', () => {
+            state.feverTimeLeft = 0;
+            saveGameDataNow();
         });
-        window.addEventListener('pagehide', saveGameDataNow);
         window.addEventListener('beforeunload', saveGameDataNow);
 
         function loadGameData() {
@@ -2186,7 +2338,16 @@
                 const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
                 if (raw) {
                     const parsed = JSON.parse(raw);
+                    // 既存セーブデータの全項目を完全継承
                     Object.assign(state, parsed);
+
+                    // 数値のNaNや不正値に対する安全ガード
+                    if (!Number.isFinite(state.score) || state.score < 0) state.score = 0;
+                    if (Number.isFinite(state.lvlSpeed)) state.lvlSpeed = Math.max(1, Math.min(MAX_UPGRADE_LEVEL, state.lvlSpeed));
+                    if (Number.isFinite(state.lvlCap)) state.lvlCap = Math.max(1, Math.min(MAX_UPGRADE_LEVEL, state.lvlCap));
+                    if (Number.isFinite(state.lvlRare)) state.lvlRare = Math.max(1, Math.min(MAX_UPGRADE_LEVEL, state.lvlRare));
+                    if (Number.isFinite(state.lvlMagnet)) state.lvlMagnet = Math.max(1, Math.min(MAX_UPGRADE_LEVEL, state.lvlMagnet));
+                    if (Number.isFinite(state.feverTimeLeft)) state.feverTimeLeft = Math.max(0, state.feverTimeLeft);
                 }
             } catch (e) {
                 console.warn("[Storage Load Warning]", e);
@@ -2194,17 +2355,22 @@
 
             checkDailyBatteryReset();
             checkDailyLoginCycle();
+
+            if (!state.roombaObj) {
+                state.roombaObj = { x: 150, y: 150, vx: 2.2, vy: 2.0, radius: 34 };
+            } else {
+                if (!Number.isFinite(state.roombaObj.x)) state.roombaObj.x = 150;
+                if (!Number.isFinite(state.roombaObj.y)) state.roombaObj.y = 150;
+                if (!state.roombaObj.vx) state.roombaObj.vx = 2.2;
+                if (!state.roombaObj.vy) state.roombaObj.vy = 2.0;
+            }
+
             applyRoombaUIState();
 
-            const modalLang = document.getElementById('modal-language');
-            if (modalLang) {
-                if (state.hasSelectedLanguage) {
-                    modalLang.classList.add('hidden');
-                    modalLang.classList.remove('flex');
-                } else {
-                    modalLang.classList.remove('hidden');
-                    modalLang.classList.add('flex');
-                }
+            if (state.hasSelectedLanguage) {
+                closeModal('modal-language');
+            } else {
+                openModal('modal-language');
             }
             applyTranslations();
 
@@ -2213,12 +2379,12 @@
                 if (elapsedMs > 15000) calculateOfflineRewards(elapsedMs / 1000);
             }
 
-            if (getActiveGhosts().length === 0) spawnInitialGhosts();
+            if (getActiveGhostCount() === 0) spawnInitialGhosts();
             
-            const tut = document.getElementById('modal-tutorial');
-            if (tut) {
-                if (state.hasCompletedTutorial || !state.hasSelectedLanguage) tut.classList.add('hidden');
-                else tut.classList.remove('hidden');
+            if (state.hasCompletedTutorial || !state.hasSelectedLanguage) {
+                closeModal('modal-tutorial');
+            } else {
+                openModal('modal-tutorial');
             }
             updateSettingsModalUI();
             updateLoginHeaderUI();
@@ -2325,25 +2491,17 @@
             initAudio();
             const lang = state.language || 'ja';
             const dict = I18N[lang] || I18N.ja;
-            const modal = document.getElementById('modal-purchase-confirm');
             const pBtn = document.getElementById('btn-purchase-execute');
             if (pBtn) {
                 pBtn.textContent = dict.catcherFreeUnlockBtn || "無料でアンロック";
                 pBtn.style.setProperty('background-color', '#0284c7', 'important');
                 pBtn.style.setProperty('color', '#ffffff', 'important');
             }
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
+            openModal('modal-purchase-confirm');
         }
 
         function closeRoombaUnlockModal() {
-            const modal = document.getElementById('modal-purchase-confirm');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
+            closeModal('modal-purchase-confirm');
         }
 
         safeAddListener('btn-purchase-cancel', 'click', closeRoombaUnlockModal);
@@ -2444,25 +2602,17 @@
 
             const lang = state.language || 'ja';
             const dict = I18N[lang] || I18N.ja;
-            const modal = document.getElementById('modal-fever-confirm');
             const fBtn = document.getElementById('btn-fever-execute');
             if (fBtn) {
                 fBtn.textContent = dict.feverStartBtn || "今すぐ発動！";
                 fBtn.style.setProperty('background-color', '#e11d48', 'important');
                 fBtn.style.setProperty('color', '#ffffff', 'important');
             }
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
+            openModal('modal-fever-confirm');
         }
 
         function closeFeverConfirm() {
-            const modal = document.getElementById('modal-fever-confirm');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
+            closeModal('modal-fever-confirm');
         }
 
         safeAddListener('btn-fever-cancel', 'click', closeFeverConfirm);
@@ -2498,18 +2648,10 @@
                 applyTranslations();
                 saveGameDataNow();
                 
-                const modalLang = document.getElementById('modal-language');
-                if (modalLang) {
-                    modalLang.classList.add('hidden');
-                    modalLang.classList.remove('flex');
-                }
+                closeModal('modal-language');
                 
                 if (!state.hasCompletedTutorial) {
-                    const tut = document.getElementById('modal-tutorial');
-                    if (tut) {
-                        tut.classList.remove('hidden');
-                        tut.classList.add('flex');
-                    }
+                    openModal('modal-tutorial');
                 }
                 playPopSound("C6");
             });
@@ -2528,31 +2670,22 @@
 
         safeAddListener('btn-tutorial-next', 'click', () => {
             initAudio();
-            document.getElementById('modal-tutorial').classList.add('hidden');
+            closeModal('modal-tutorial');
             state.hasCompletedTutorial = true;
             saveGameDataNow();
         });
         safeAddListener('btn-offline-close', 'click', () => {
-            document.getElementById('modal-offline').classList.add('hidden');
-            document.getElementById('modal-offline').classList.remove('flex');
+            closeModal('modal-offline');
         });
 
         function openSettingsModal() {
             initAudio();
             updateSettingsModalUI();
-            const modal = document.getElementById('modal-settings');
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
+            openModal('modal-settings');
         }
 
         function closeSettingsModal() {
-            const modal = document.getElementById('modal-settings');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
+            closeModal('modal-settings');
         }
 
         safeAddListener('btn-settings', 'click', openSettingsModal);
@@ -2758,18 +2891,10 @@
 
         safeAddListener('btn-dex', 'click', () => {
             renderDexList();
-            const modal = document.getElementById('modal-dex');
-            if (modal) {
-                modal.classList.remove('hidden'); 
-                modal.classList.add('flex');
-            }
+            openModal('modal-dex');
         });
         safeAddListener('close-dex', 'click', () => { 
-            const modal = document.getElementById('modal-dex');
-            if (modal) {
-                modal.classList.add('hidden'); 
-                modal.classList.remove('flex'); 
-            }
+            closeModal('modal-dex');
         });
 
         function gameLoop() {
@@ -2813,13 +2938,8 @@
 
                 updateFeverCardUI();
 
+                // キャンバスのクリア（背景ドットはCSS room-patternで超軽量描画）
                 ctx.clearRect(0, 0, cw, ch);
-                ctx.fillStyle = '#e5e0d5';
-                for (let x = 18; x < cw; x += 24) { 
-                    for (let y = 18; y < ch; y += 24) { 
-                        ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill(); 
-                    } 
-                }
 
                 const intervalMs = getSpawnIntervalMs();
                 const batchSize = getSpawnBatchSize();
@@ -2836,9 +2956,11 @@
                     isUiDirty = true;
                 }
 
-                const active = getActiveGhosts();
-                for (let i = 0; i < active.length; i++) {
-                    const g = active[i];
+                // ゴーストの物理演算とDOM座標反映（ゼロアロケーション走査）
+                for (let i = 0; i < ghostPool.length; i++) {
+                    const g = ghostPool[i];
+                    if (!g.active) continue;
+
                     if (g.scale < 1) g.scale += (1 - g.scale) * 0.25;
                     g.wobbleOffset += g.wobbleSpeed;
 
@@ -2850,33 +2972,64 @@
                         g.vx *= 0.8;
                         g.vy *= 0.8;
                     } else {
-                        if (Math.random() < 0.03) { g.vx += (Math.random() - 0.5) * 0.8; g.vy += (Math.random() - 0.5) * 0.8; }
+                        if (Math.random() < 0.03) { 
+                            g.vx += (Math.random() - 0.5) * 0.8; 
+                            g.vy += (Math.random() - 0.5) * 0.8; 
+                        }
                         const maxSpeed = g.isBaby ? 2.4 : 1.6;
                         const speed = Math.hypot(g.vx, g.vy);
-                        if (speed > maxSpeed) { g.vx = (g.vx / speed) * maxSpeed; g.vy = (g.vy / speed) * maxSpeed; }
-                        g.x += g.vx; g.y += g.vy;
+                        if (speed > maxSpeed) { 
+                            g.vx = (g.vx / speed) * maxSpeed; 
+                            g.vy = (g.vy / speed) * maxSpeed; 
+                        }
+                        g.x += g.vx; 
+                        g.y += g.vy;
                         if (Math.abs(g.vx) > 0.2) g.facing = g.vx >= 0 ? 1 : -1;
                         const margin = g.radius + 6;
-                        if (g.x < margin) { g.x = margin; g.vx *= -1; } if (g.x > cw - margin) { g.x = cw - margin; g.vx *= -1; }
-                        if (g.y < margin) { g.y = margin; g.vy *= -1; } if (g.y > ch - margin) { g.y = ch - margin; g.vy *= -1; }
+                        if (g.x < margin) { g.x = margin; g.vx *= -1; } 
+                        if (g.x > cw - margin) { g.x = cw - margin; g.vx *= -1; }
+                        if (g.y < margin) { g.y = margin; g.vy *= -1; } 
+                        if (g.y > ch - margin) { g.y = ch - margin; g.vy *= -1; }
                     }
 
-                    const stretchX = 1 + Math.sin(g.wobbleOffset) * 0.06, stretchY = 1 + Math.cos(g.wobbleOffset) * 0.06;
+                    const stretchX = 1 + Math.sin(g.wobbleOffset) * 0.06;
+                    const stretchY = 1 + Math.cos(g.wobbleOffset) * 0.06;
                     const baseScale = g.isMilestone ? 2.6 : (g.isBaby ? 0.6 : 0.95);
                     const stackScale = 1 + Math.min(0.22, Math.log10(Math.max(1, g.stackCount)) * 0.06);
                     g.el.style.transform = `translate3d(${g.x - 26}px, ${g.y - 26}px, 0) scale(${g.scale * baseScale * stackScale})`;
                     g.img.style.transform = `scale(${stretchX * g.facing}, ${stretchY})`;
                 }
 
+                // キャッチャー自律回収
                 if (state.hasRoomba && state.roombaActive) {
+                    if (!state.roombaObj) state.roombaObj = { x: 150, y: 150, vx: 2.2, vy: 2.0, radius: 34 };
                     const rb = state.roombaObj;
                     const powerRadius = 36;
+                    const minX = powerRadius;
+                    const maxX = Math.max(minX, cw - powerRadius);
+                    const minY = powerRadius;
+                    const maxY = Math.max(minY, ch - powerRadius);
 
-                    rb.x += rb.vx; rb.y += rb.vy;
-                    if (rb.x < powerRadius) { rb.x = powerRadius; rb.vx = Math.abs(rb.vx); }
-                    if (rb.x > cw - powerRadius) { rb.x = cw - powerRadius; rb.vx = -Math.abs(rb.vx); }
-                    if (rb.y < powerRadius) { rb.y = powerRadius; rb.vy = Math.abs(rb.vy); }
-                    if (rb.y > ch - powerRadius) { rb.y = ch - powerRadius; rb.vy = -Math.abs(rb.vy); }
+                    if (cw > powerRadius * 2 && ch > powerRadius * 2) {
+                        rb.x += rb.vx;
+                        rb.y += rb.vy;
+
+                        if (rb.x <= minX) {
+                            rb.x = minX;
+                            rb.vx = Math.abs(rb.vx) || 2.2;
+                        } else if (rb.x >= maxX) {
+                            rb.x = maxX;
+                            rb.vx = -Math.abs(rb.vx) || -2.2;
+                        }
+
+                        if (rb.y <= minY) {
+                            rb.y = minY;
+                            rb.vy = Math.abs(rb.vy) || 2.0;
+                        } else if (rb.y >= maxY) {
+                            rb.y = maxY;
+                            rb.vy = -Math.abs(rb.vy) || -2.0;
+                        }
+                    }
 
                     ctx.save();
                     ctx.translate(rb.x, rb.y);
@@ -2892,10 +3045,10 @@
                     ctx.fillText('⚡FAST', 0, 3);
                     ctx.restore();
 
-                    const curActive = getActiveGhosts();
-                    for (let i = curActive.length - 1; i >= 0; i--) {
-                        const g = curActive[i];
-                        if (g.isMilestone) continue;
+                    // キャッチャー判定（ゼロアロケーション）
+                    for (let i = ghostPool.length - 1; i >= 0; i--) {
+                        const g = ghostPool[i];
+                        if (!g.active || g.isMilestone) continue;
 
                         if (Math.hypot(g.x - rb.x, g.y - rb.y) <= powerRadius + g.radius * 0.7) {
                             collectGhostInstance(g, 0.10);
@@ -2903,27 +3056,46 @@
                     }
                 }
 
+                // スワイプ吸引エフェクトの描画
                 if (isPointerDown && pointerPos.x > 0) {
                     const radius = getSwipeRadius();
-                    ctx.save(); ctx.beginPath(); ctx.arc(pointerPos.x, pointerPos.y, radius, 0, Math.PI * 2);
+                    ctx.save(); 
+                    ctx.beginPath(); 
+                    ctx.arc(pointerPos.x, pointerPos.y, radius, 0, Math.PI * 2);
                     ctx.fillStyle = state.feverTimeLeft > 0 ? 'rgba(244, 63, 94, 0.22)' : 'rgba(251, 191, 36, 0.22)';
-                    ctx.fill(); ctx.lineWidth = 2.5; ctx.setLineDash([6, 4]); 
+                    ctx.fill(); 
+                    ctx.lineWidth = 2.5; 
+                    ctx.setLineDash([6, 4]); 
                     ctx.strokeStyle = state.feverTimeLeft > 0 ? '#e11d48' : '#d97706'; 
-                    ctx.stroke(); ctx.restore();
+                    ctx.stroke(); 
+                    ctx.restore();
                 }
 
+                // パーティクル描画
                 for (let i = state.particles.length - 1; i >= 0; i--) {
-                    const p = state.particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
+                    const p = state.particles[i]; 
+                    p.x += p.vx; 
+                    p.y += p.vy; 
+                    p.alpha -= 0.04;
                     if (p.alpha <= 0) { state.particles.splice(i, 1); continue; }
-                    ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                    ctx.save(); 
+                    ctx.globalAlpha = p.alpha; 
+                    ctx.fillStyle = '#fbbf24'; 
+                    ctx.beginPath(); 
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); 
+                    ctx.fill(); 
+                    ctx.restore();
                 }
 
+                // 浮動獲得スコア演出
                 if (state.floatingTexts.length > 0) {
                     ctx.save();
                     ctx.font = '800 12px "M PLUS Rounded 1c", sans-serif';
                     ctx.textAlign = 'center';
                     for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
-                        const ft = state.floatingTexts[i]; ft.y += ft.vy; ft.alpha -= 0.03;
+                        const ft = state.floatingTexts[i]; 
+                        ft.y += ft.vy; 
+                        ft.alpha -= 0.03;
                         if (ft.alpha <= 0) { state.floatingTexts.splice(i, 1); continue; }
                         ctx.globalAlpha = ft.alpha;
                         ctx.fillStyle = ft.color;
@@ -2938,7 +3110,8 @@
                     isUiDirty = false;
                 }
 
-                if (now - lastAutoSaveTime >= 2000) {
+                // 変更があったときのみセーブ（ストレージI/O節約）
+                if (isSaveDirty && now - lastAutoSaveTime >= 2500) {
                     saveGameDataNow();
                 }
             } catch (err) {
@@ -2948,13 +3121,45 @@
             requestAnimationFrame(gameLoop);
         }
 
+        function initModalBackdropClosers() {
+            const dismissableModals = [
+                'modal-settings',
+                'modal-login-info',
+                'modal-purchase-confirm',
+                'modal-fever-confirm',
+                'modal-dex',
+                'modal-offline'
+            ];
+            dismissableModals.forEach((id) => {
+                const modal = document.getElementById(id);
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            closeModal(id);
+                        }
+                    });
+                }
+            });
+        }
+
         function startApp() {
             try {
+                loadGameData();
                 resizeCanvas();
                 initGhostDOMPool();
-                loadGameData();
+                initModalBackdropClosers();
                 state.lastTickTime = Date.now();
                 requestAnimationFrame(gameLoop);
+                setTimeout(resizeCanvas, 100);
+
+                // 初回タップ/クリックで確実にAudioContextをアクティブ化
+                const unlockAudioOnce = () => {
+                    initAudio();
+                    window.removeEventListener('pointerdown', unlockAudioOnce);
+                    window.removeEventListener('keydown', unlockAudioOnce);
+                };
+                window.addEventListener('pointerdown', unlockAudioOnce, { passive: true });
+                window.addEventListener('keydown', unlockAudioOnce, { passive: true });
 
                 setTimeout(dismissTutorialToast, 4000);
             } catch (initErr) {
