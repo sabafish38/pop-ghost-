@@ -130,7 +130,8 @@
             height: 52px;
             display: none;
             pointer-events: none;
-            will-change: transform;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
             transform-origin: center center;
         }
         .ghost-img {
@@ -184,7 +185,7 @@
 <body class="bg-stone-900 justify-center items-center">
 
     <div id="game-app" class="bg-[#fdfbf7] shadow-2xl border-x-2 border-stone-800">
-        <header class="z-20 px-2 py-1 bg-[#fdfbf7]/95 backdrop-blur-sm border-b-2 border-dashed border-stone-300 flex flex-col gap-0.5 shrink-0">
+        <header class="z-20 px-2 py-1 bg-[#fdfbf7] border-b-2 border-dashed border-stone-300 flex flex-col gap-0.5 shrink-0">
             <div class="doodle-box px-2 py-0.5 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
                 <div class="flex items-center gap-1.5">
                     <span class="text-lg animate-pulse">👻</span>
@@ -1690,7 +1691,8 @@
                     isMilestone: false,
                     wobbleOffset: Math.random() * Math.PI * 2, 
                     wobbleSpeed: 0.05 + Math.random() * 0.04, 
-                    facing: 1 
+                    facing: 1,
+                    lastFacing: 1
                 });
             }
         }
@@ -1765,6 +1767,8 @@
             g.radius = isBaby ? 15 : (isMilestone ? 60 : 22);
             g.active = true; 
             g.facing = 1;
+            g.lastFacing = 1;
+            g.img.style.transform = 'none';
             g.img.src = generateGhostSpriteData(typeObj, true); 
             g.el.style.display = 'block';
             g.el.style.zIndex = isMilestone ? '25' : '10';
@@ -3050,12 +3054,19 @@
             closeModal('modal-dex');
         });
 
+        let lastFrameTs = performance.now();
+
         function gameLoop() {
             try {
                 const now = Date.now();
                 const dt = Math.min(0.2, (now - state.lastTickTime) / 1000);
                 const elapsedMs = dt * 1000;
                 state.lastTickTime = now;
+
+                // フレームレート非依存の移動係数（60fps = 1.0 / 30fps = 2.0 / 120fps = 0.5）
+                const fts = performance.now();
+                const fs = Math.min(2.5, Math.max(0.2, (fts - lastFrameTs) / 16.667));
+                lastFrameTs = fts;
 
                 if (state.feverTimeLeft > 0) {
                     state.feverTimeLeft -= dt;
@@ -3114,18 +3125,18 @@
                     const g = ghostPool[i];
                     if (!g.active) continue;
 
-                    if (g.scale < 1) g.scale += (1 - g.scale) * 0.25;
-                    g.wobbleOffset += g.wobbleSpeed;
+                    if (g.scale < 1) g.scale += (1 - g.scale) * 0.25 * fs;
+                    g.wobbleOffset += g.wobbleSpeed * fs;
 
                     if (g.isMilestone) {
                         const targetCenterX = cw / 2;
                         const targetCenterY = ch / 2;
-                        g.x += (targetCenterX - g.x) * 0.04;
-                        g.y += (targetCenterY - g.y) * 0.04;
-                        g.vx *= 0.8;
-                        g.vy *= 0.8;
+                        g.x += (targetCenterX - g.x) * 0.04 * fs;
+                        g.y += (targetCenterY - g.y) * 0.04 * fs;
+                        g.vx *= Math.pow(0.8, fs);
+                        g.vy *= Math.pow(0.8, fs);
                     } else {
-                        if (Math.random() < 0.03) { 
+                        if (Math.random() < 0.03 * fs) { 
                             g.vx += (Math.random() - 0.5) * 0.8; 
                             g.vy += (Math.random() - 0.5) * 0.8; 
                         }
@@ -3135,8 +3146,8 @@
                             g.vx = (g.vx / speed) * maxSpeed; 
                             g.vy = (g.vy / speed) * maxSpeed; 
                         }
-                        g.x += g.vx; 
-                        g.y += g.vy;
+                        g.x += g.vx * fs; 
+                        g.y += g.vy * fs;
                         if (Math.abs(g.vx) > 0.2) g.facing = g.vx >= 0 ? 1 : -1;
                         const margin = g.radius + 6;
                         if (g.x < margin) { g.x = margin; g.vx *= -1; } 
@@ -3149,8 +3160,13 @@
                     const stretchY = 1 + Math.cos(g.wobbleOffset) * 0.06;
                     const baseScale = g.isMilestone ? 2.6 : (g.isBaby ? 0.6 : 0.95);
                     const stackScale = 1 + Math.min(0.22, Math.log10(Math.max(1, g.stackCount)) * 0.06);
-                    g.el.style.transform = `translate3d(${g.x - 26}px, ${g.y - 26}px, 0) scale(${g.scale * baseScale * stackScale})`;
-                    g.img.style.transform = `scale(${stretchX * g.facing}, ${stretchY})`;
+                    const scaleTotal = g.scale * baseScale * stackScale;
+
+                    if (g.lastFacing !== g.facing) {
+                        g.img.style.transform = g.facing === -1 ? 'scaleX(-1)' : 'none';
+                        g.lastFacing = g.facing;
+                    }
+                    g.el.style.transform = `translate3d(${g.x - 26}px, ${g.y - 26}px, 0) scale(${scaleTotal * stretchX}, ${scaleTotal * stretchY})`;
                 }
 
                 // キャッチャー自律回収
@@ -3164,8 +3180,8 @@
                     const maxY = Math.max(minY, ch - powerRadius);
 
                     if (cw > powerRadius * 2 && ch > powerRadius * 2) {
-                        rb.x += rb.vx;
-                        rb.y += rb.vy;
+                        rb.x += rb.vx * fs;
+                        rb.y += rb.vy * fs;
 
                         if (rb.x <= minX) {
                             rb.x = minX;
@@ -3225,18 +3241,20 @@
                 }
 
                 // パーティクル描画
-                for (let i = state.particles.length - 1; i >= 0; i--) {
-                    const p = state.particles[i]; 
-                    p.x += p.vx; 
-                    p.y += p.vy; 
-                    p.alpha -= 0.04;
-                    if (p.alpha <= 0) { state.particles.splice(i, 1); continue; }
-                    ctx.save(); 
-                    ctx.globalAlpha = p.alpha; 
-                    ctx.fillStyle = '#fbbf24'; 
-                    ctx.beginPath(); 
-                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); 
-                    ctx.fill(); 
+                if (state.particles.length > 0) {
+                    ctx.save();
+                    ctx.fillStyle = '#fbbf24';
+                    for (let i = state.particles.length - 1; i >= 0; i--) {
+                        const p = state.particles[i]; 
+                        p.x += p.vx * fs; 
+                        p.y += p.vy * fs; 
+                        p.alpha -= 0.04 * fs;
+                        if (p.alpha <= 0) { state.particles.splice(i, 1); continue; }
+                        ctx.globalAlpha = Math.max(0, p.alpha);
+                        ctx.beginPath(); 
+                        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); 
+                        ctx.fill(); 
+                    }
                     ctx.restore();
                 }
 
@@ -3247,10 +3265,10 @@
                     ctx.textAlign = 'center';
                     for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
                         const ft = state.floatingTexts[i]; 
-                        ft.y += ft.vy; 
-                        ft.alpha -= 0.03;
+                        ft.y += ft.vy * fs; 
+                        ft.alpha -= 0.03 * fs;
                         if (ft.alpha <= 0) { state.floatingTexts.splice(i, 1); continue; }
-                        ctx.globalAlpha = ft.alpha;
+                        ctx.globalAlpha = Math.max(0, ft.alpha);
                         ctx.fillStyle = ft.color;
                         ctx.fillText(ft.text, ft.x, ft.y);
                     }
